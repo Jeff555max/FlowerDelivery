@@ -27,9 +27,6 @@ urlpatterns = [
     path('catalog/', views.catalog, name='catalog'),
 ]
 
-
-
-
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
