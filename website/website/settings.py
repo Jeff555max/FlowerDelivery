@@ -128,3 +128,6 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # STATICFILES_DIRS = [BASE_DIR / 'static']  Убедитесь, что другие настройки, такие как STATICFILES_DIRS, TEMPLATES, используют правильное объединение путей с помощью pathlib.Path
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
