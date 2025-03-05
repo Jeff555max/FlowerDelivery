@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from .models import Product  # ✅ Добавляем импорт модели Product
 
 def index(request):
     return render(request, 'index.html')  # Загружаем шаблон index.html
