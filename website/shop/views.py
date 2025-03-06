@@ -11,22 +11,26 @@ def catalog(request):
     return render(request, 'catalog.html', {'products': products})
 
 
-def add_to_cart(request, product_id):
-    """Добавление товара в корзину"""
+def add_to_cart(request, product_id, quantity):
+    """Добавление товара в корзину с выбором количества"""
     if not request.session.session_key:
         request.session.create()
 
     session_key = request.session.session_key
     product = get_object_or_404(Product, id=product_id)
+    quantity = int(quantity)
 
     cart_item, created = Cart.objects.get_or_create(session_key=session_key, product=product)
 
     if not created:
-        cart_item.quantity += 1
-        cart_item.save()
+        cart_item.quantity += quantity  # ✅ Увеличиваем на выбранное количество
+    else:
+        cart_item.quantity = quantity
+
+    cart_item.save()
 
     return JsonResponse({
-        "message": "Товар добавлен в корзину!",
+        "message": f"{quantity} шт. {product.name} добавлено в корзину!",
         "cart_count": Cart.objects.filter(session_key=session_key).count()
     })
 

@@ -6,7 +6,8 @@
     <title>Каталог цветов</title>
     <script>
         function addToCart(productId) {
-            fetch(`/add_to_cart/${productId}/`, { method: 'GET' })
+            let quantity = document.getElementById(`quantity-${productId}`).value;
+            fetch(`/add_to_cart/${productId}/${quantity}/`, { method: 'GET' })
                 .then(response => response.json())
                 .then(data => {
                     alert(data.message);
@@ -27,6 +28,8 @@
                     <img src="{{ product.image.url }}" alt="{{ product.name }}" width="200">
                 {% endif %}
                 <br>
+                <label for="quantity-{{ product.id }}">Количество:</label>
+                <input type="number" id="quantity-{{ product.id }}" value="1" min="1">
                 <button onclick="addToCart({{ product.id }})">Добавить в корзину</button>
             </div>
         {% empty %}

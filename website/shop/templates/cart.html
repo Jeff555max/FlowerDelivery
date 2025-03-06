@@ -10,7 +10,7 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.message === "Товар удалён из корзины") {
-                        location.reload();  // Обновляем страницу после удаления
+                        location.reload();
                     } else {
                         document.getElementById(`quantity-${productId}`).innerText = data.quantity;
                     }
@@ -27,7 +27,6 @@
                 {{ item.product.name }} - <span id="quantity-{{ item.product.id }}">{{ item.quantity }}</span> шт.
                 ({{ item.product.price }} руб. за шт.)
 
-                <!-- Кнопки изменения количества -->
                 <button onclick="updateCart({{ item.product.id }}, 'increase')">➕</button>
                 <button onclick="updateCart({{ item.product.id }}, 'decrease')">➖</button>
                 <button onclick="updateCart({{ item.product.id }}, 'remove')">❌</button>
@@ -37,5 +36,15 @@
         {% endfor %}
     </ul>
     <p><strong>Итоговая цена:</strong> {{ total_price }} руб.</p>
+
+    {% if cart_items %}
+        <form action="{% url 'checkout' %}" method="post">
+            {% csrf_token %}
+            <input type="text" name="name" placeholder="Ваше имя" required>
+            <input type="text" name="phone" placeholder="Телефон" required>
+            <input type="text" name="address" placeholder="Адрес доставки" required>
+            <button type="submit">Оформить заказ</button>
+        </form>
+    {% endif %}
 </body>
 </html>
