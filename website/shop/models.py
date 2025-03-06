@@ -30,6 +30,11 @@ class Order(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name="Статус заказа")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата заказа")
 
+    # чтобы таблица в админ-панели отображалась на русском, создаём вложенные классы в каждой модели
+    class Meta:
+        verbose_name = "Заказ"
+        verbose_name_plural = "Заказы"
+
     def __str__(self):
         return f"Заказ {self.id} - {self.name}"
 
@@ -37,6 +42,11 @@ class Cart(models.Model):
     session_key = models.CharField(max_length=255, verbose_name="Ключ сессии")
     product = models.ForeignKey('Product', on_delete=models.CASCADE, verbose_name="Товар")
     quantity = models.PositiveIntegerField(default=1, verbose_name="Количество")
+
+    # чтобы таблица в админ-панели отображалась на русском, создаём вложенные классы в каждой модели
+    class Meta:
+        verbose_name = "Корзина"
+        verbose_name_plural = "Корзины"
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"
