@@ -19,12 +19,18 @@ def add_to_cart(request, product_id):
     session_key = request.session.session_key
     product = get_object_or_404(Product, id=product_id)
 
+    # Проверяем, есть ли товар в корзине
     cart_item, created = Cart.objects.get_or_create(session_key=session_key, product=product)
+
     if not created:
-        cart_item.quantity += 1
+        cart_item.quantity += 1  # ✅ Увеличиваем количество, если товар уже есть в корзине
         cart_item.save()
 
-    return JsonResponse({"message": "Товар добавлен в корзину!"})
+    return JsonResponse({
+        "message": "Товар добавлен в корзину!",
+        "cart_count": Cart.objects.filter(session_key=session_key).count()
+    })
+
 
 def cart(request):
     session_key = request.session.session_key

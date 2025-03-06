@@ -11,6 +11,7 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'phone', 'total_price', 'status', 'created_at')
     list_filter = ('status',)
     search_fields = ('name', 'phone')
+    list_editable = ('status',)  # ✅ Добавляем возможность редактирования статуса
 
 @admin.register(Cart)
 class CartAdmin(admin.ModelAdmin):
