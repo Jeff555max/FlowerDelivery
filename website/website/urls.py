@@ -25,9 +25,21 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.index, name='index'),
     path('catalog/', views.catalog, name='catalog'),
+    path('admin/', admin.site.urls),
+    path('', views.index, name='index'),
+    path('catalog/', views.catalog, name='catalog'),
+    path('cart/', views.cart, name='cart'),
+    path('add_to_cart/<int:product_id>/', views.add_to_cart, name='add_to_cart'),
+    path('checkout/', views.checkout, name='checkout'),
+
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+
+
+
 
 
 

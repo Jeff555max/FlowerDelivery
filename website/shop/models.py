@@ -14,3 +14,29 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Order(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'В ожидании'),
+        ('processing', 'В обработке'),
+        ('delivered', 'Доставлено'),
+    ]
+
+    name = models.CharField(max_length=255, verbose_name="Имя покупателя")
+    phone = models.CharField(max_length=20, verbose_name="Телефон")
+    address = models.TextField(verbose_name="Адрес доставки")
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Итоговая цена")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name="Статус заказа")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата заказа")
+
+    def __str__(self):
+        return f"Заказ {self.id} - {self.name}"
+
+class Cart(models.Model):
+    session_key = models.CharField(max_length=255, verbose_name="Ключ сессии")
+    product = models.ForeignKey('Product', on_delete=models.CASCADE, verbose_name="Товар")
+    quantity = models.PositiveIntegerField(default=1, verbose_name="Количество")
+
+    def __str__(self):
+        return f"{self.quantity} x {self.product.name}"
