@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from .models import Product, Cart, Order
 
 def index(request):
-    return render(request, 'index.html')  # Загружаем шаблон index.html
+    return render(request, 'index.html')
 
 
 def catalog(request):
@@ -19,35 +19,35 @@ def add_to_cart(request, product_id):
     session_key = request.session.session_key
     product = get_object_or_404(Product, id=product_id)
 
-    # Проверяем, есть ли товар в корзине
     cart_item, created = Cart.objects.get_or_create(session_key=session_key, product=product)
 
-    def update_cart(request, product_id, action):
-        """Обновление количества товара в корзине"""
-        session_key = request.session.session_key
-        cart_item = get_object_or_404(Cart, session_key=session_key, product_id=product_id)
-
-        if action == "increase":
-            cart_item.quantity += 1
-        elif action == "decrease" and cart_item.quantity > 1:
-            cart_item.quantity -= 1
-        elif action == "remove":
-            cart_item.delete()
-            return JsonResponse({"message": "Товар удалён из корзины"})
-
-        cart_item.save()
-        return JsonResponse({
-            "message": "Количество обновлено!",
-            "quantity": cart_item.quantity
-        })
-
     if not created:
-        cart_item.quantity += 1  # ✅ Увеличиваем количество, если товар уже есть в корзине
+        cart_item.quantity += 1
         cart_item.save()
 
     return JsonResponse({
         "message": "Товар добавлен в корзину!",
         "cart_count": Cart.objects.filter(session_key=session_key).count()
+    })
+
+
+def update_cart(request, product_id, action):
+    """Обновление количества товара в корзине"""
+    session_key = request.session.session_key
+    cart_item = get_object_or_404(Cart, session_key=session_key, product_id=product_id)
+
+    if action == "increase":
+        cart_item.quantity += 1
+    elif action == "decrease" and cart_item.quantity > 1:
+        cart_item.quantity -= 1
+    elif action == "remove":
+        cart_item.delete()
+        return JsonResponse({"message": "Товар удалён из корзины"})
+
+    cart_item.save()
+    return JsonResponse({
+        "message": "Количество обновлено!",
+        "quantity": cart_item.quantity
     })
 
 
