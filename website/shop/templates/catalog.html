@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Каталог цветов</title>
+    <script>
+        function addToCart(productId) {
+            fetch(`/add_to_cart/${productId}/`, { method: 'GET' })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                })
+                .catch(error => console.error('Ошибка:', error));
+        }
+    </script>
 </head>
 <body>
     <h1>Каталог цветов</h1>
@@ -16,7 +26,11 @@
                 {% if product.image %}
                     <img src="{{ product.image.url }}" alt="{{ product.name }}" width="200">
                 {% endif %}
+                <br>
+                <button onclick="addToCart({{ product.id }})">Добавить в корзину</button>
             </div>
+        {% empty %}
+            <p>Нет доступных товаров.</p>
         {% endfor %}
     </div>
 </body>
