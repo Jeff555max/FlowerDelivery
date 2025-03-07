@@ -2,6 +2,13 @@ import logging
 from aiogram import Bot, Dispatcher, executor, types
 from Bot.config import BOT_TOKEN
 
+import os
+import django
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "website.settings")
+django.setup()
+
+
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
 
