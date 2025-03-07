@@ -8,6 +8,8 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import Order
 
+
+
 def index(request):
     return render(request, 'index.html')
 
@@ -66,6 +68,15 @@ def cart(request):
     cart_items = Cart.objects.filter(session_key=session_key)
     total_price = sum(item.product.price * item.quantity for item in cart_items)
     return render(request, 'cart.html', {'cart_items': cart_items, 'total_price': total_price})
+
+
+def remove_from_cart(request, product_id):
+    """Удаление товара из корзины"""
+    session_key = request.session.session_key
+    cart_item = get_object_or_404(Cart, session_key=session_key, product_id=product_id)
+    cart_item.delete()
+
+    return redirect('cart')
 
 
 def checkout(request):

@@ -1,18 +1,11 @@
-<!DOCTYPE html>
 {% extends 'base.html' %}
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {% block title %}Главная страница{% endblock %}
 
-</head>
-<body>
-   {% block content %}
-<h1>Добро пожаловать в наш магазин цветов!</h1>
-<p>Мы предлагаем широкий ассортимент свежих цветов для любого случая.</p>
-<a class="btn btn-primary" href="{% url 'catalog' %}">Перейти к ассортименту</a>
-    {% endblock %}
-</body>
-</html>
+{% block title %}Главная{% endblock %}
 
+{% block content %}
+<div class="jumbotron text-center bg-light p-5">
+    <h1 class="display-4 fw-bold">🌸 Магазин цветов</h1>
+    <p class="lead">Лучшие цветочные композиции для любого случая</p>
+    <a class="btn btn-primary btn-lg" href="{% url 'catalog' %}">Перейти в каталог</a>
+</div>
+{% endblock %}
