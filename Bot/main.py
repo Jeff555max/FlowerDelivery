@@ -1,34 +1,27 @@
+import asyncio
 import logging
-from aiogram import Bot, Dispatcher, executor, types
-from Bot.config import BOT_TOKEN
+from aiogram import Bot, Dispatcher, types
+from aiogram.filters import Command
 
-import os
-import django
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "website.settings")
-django.setup()
-
+# Замените 'YOUR_BOT_TOKEN' на токен вашего бота
+API_TOKEN = 'YOUR_BOT_TOKEN'
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
 
-bot = Bot(token=BOT_TOKEN)
-dp = Dispatcher(bot)
+# Создание экземпляра бота и диспетчера
+bot = Bot(token=API_TOKEN)
+dp = Dispatcher()
 
-@dp.message_handler(commands=['start'])
+# Хэндлер на команду /start
+@dp.message(Command("start"))
 async def cmd_start(message: types.Message):
-    await message.answer("Добро пожаловать в Магазин цветов! Используйте /catalog для просмотра ассортимента.")
+    await message.answer("Привет! Я бот, созданный с использованием aiogram 3.")
 
-@dp.message_handler(commands=['catalog'])
-async def cmd_catalog(message: types.Message):
-    # Здесь можно получить список товаров из базы данных
-    # Например, для простоты вернем тестовое сообщение
-    await message.answer("Список товаров: \n1. Роза\n2. Лилия\n3. Тюльпан\nЧтобы заказать, отправьте команду /order")
+# Функция для запуска поллинга
+async def main():
+    dp.include_router(dp)  # Регистрация роутеров, если они есть
+    await dp.start_polling(bot)
 
-@dp.message_handler(commands=['order'])
-async def cmd_order(message: types.Message):
-    # Здесь можно реализовать логику оформления заказа через бота
-    await message.answer("Пожалуйста, отправьте информацию о заказе в формате:\nНазвание товара, количество, адрес доставки.")
-
-if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True)
+if __name__ == "__main__":
+    asyncio.run(main())
