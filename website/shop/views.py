@@ -1,6 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from .models import Product, Cart, Order
+from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Order
 
 def index(request):
     return render(request, 'index.html')
@@ -83,3 +89,60 @@ def checkout(request):
         return render(request, 'order_success.html', {'order': order})
 
     return redirect('cart')
+
+
+
+
+
+def register(request):
+    """Регистрация нового пользователя"""
+    if request.method == "POST":
+        username = request.POST["username"]
+        email = request.POST["email"]
+        password = request.POST["password"]
+        password2 = request.POST["password2"]
+
+        if password != password2:
+            messages.error(request, "Пароли не совпадают!")
+            return redirect("register")
+
+        if User.objects.filter(username=username).exists():
+            messages.error(request, "Такое имя пользователя уже занято!")
+            return redirect("register")
+
+        user = User.objects.create_user(username=username, email=email, password=password)
+        login(request, user)
+        messages.success(request, "Вы успешно зарегистрированы!")
+        return redirect("profile")
+
+    return render(request, "register.html")
+
+
+def user_login(request):
+    """Авторизация пользователя"""
+    if request.method == "POST":
+        username = request.POST["username"]
+        password = request.POST["password"]
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None:
+            login(request, user)
+            return redirect("profile")
+        else:
+            messages.error(request, "Неверное имя пользователя или пароль")
+
+    return render(request, "login.html")
+
+
+def user_logout(request):
+    """Выход пользователя"""
+    logout(request)
+    return redirect("login")
+
+
+@login_required
+def profile(request):
+    """Личный кабинет пользователя с историей заказов"""
+    orders = Order.objects.filter(name=request.user.username)
+    return render(request, "profile.html", {"orders": orders})
+
