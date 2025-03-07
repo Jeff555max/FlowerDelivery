@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет</title>
+</head>
+<body>
+    <h1>Добро пожаловать, {{ user.username }}!</h1>
+    <h2>Ваши заказы:</h2>
+    <ul>
+        {% for order in orders %}
+            <li>Заказ #{{ order.id }} – {{ order.total_price }} руб. ({{ order.status }})</li>
+        {% empty %}
+            <p>Вы ещё не делали заказов.</p>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'logout' %}">Выйти</a>
+</body>
+</html>
