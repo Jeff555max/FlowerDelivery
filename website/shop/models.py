@@ -38,6 +38,10 @@ class Order(models.Model):
     def __str__(self):
         return f"Заказ {self.id} - {self.name}"
 
+    def get_status_display_rus(self):
+        """Отображение статуса на русском языке"""
+        return dict(self.STATUS_CHOICES).get(self.status, "Неизвестный статус") # Позволяет выводить переведённый статус
+
 class Cart(models.Model):
     session_key = models.CharField(max_length=255, verbose_name="Ключ сессии")
     product = models.ForeignKey('Product', on_delete=models.CASCADE, verbose_name="Товар")

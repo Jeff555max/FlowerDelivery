@@ -8,13 +8,14 @@
 <body>
     <h1>Добро пожаловать, {{ user.username }}!</h1>
     <h2>Ваши заказы:</h2>
-    <ul>
-        {% for order in orders %}
-            <li>Заказ #{{ order.id }} – {{ order.total_price }} руб. ({{ order.status }})</li>
-        {% empty %}
-            <p>Вы ещё не делали заказов.</p>
-        {% endfor %}
-    </ul>
+        <ul>
+            {% for order in orders %}
+                <li>Заказ #{{ order.id }} – {{ order.total_price }} руб. ({{ order.get_status_display_rus }})</li>
+            {% empty %}
+                <p>Вы ещё не делали заказов.</p>
+            {% endfor %}
+        </ul>
+
     <a href="{% url 'logout' %}">Выйти</a>
 </body>
 </html>
