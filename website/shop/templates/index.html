@@ -1,13 +1,18 @@
 <!DOCTYPE html>
+{% extends 'base.html' %}
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlowerDelivery</title>
+    {% block title %}Главная страница{% endblock %}
+
 </head>
 <body>
-    <h1>Добро пожаловать в FlowerDelivery!</h1>
-    <p>Мы доставляем цветы по вашему заказу.</p>
+   {% block content %}
+<h1>Добро пожаловать в наш магазин цветов!</h1>
+<p>Мы предлагаем широкий ассортимент свежих цветов для любого случая.</p>
+<a class="btn btn-primary" href="{% url 'catalog' %}">Перейти к ассортименту</a>
+    {% endblock %}
 </body>
 </html>
 
