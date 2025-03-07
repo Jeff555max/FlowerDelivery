@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import Order
+from .forms import CheckoutForm
 
 
 
@@ -87,26 +88,24 @@ def remove_from_cart(request, product_id):
 
 
 def checkout(request):
+    session_key = request.session.session_key
+    cart_items = Cart.objects.filter(session_key=session_key)
+
+    if not cart_items:
+        return redirect('cart')
+
     if request.method == "POST":
-        name = request.POST.get("name")
-        phone = request.POST.get("phone")
-        address = request.POST.get("address")
-        session_key = request.session.session_key
-        cart_items = Cart.objects.filter(session_key=session_key)
+        form = CheckoutForm(request.POST)
+        if form.is_valid():
+            order = form.save(commit=False)
+            order.total_price = sum(item.product.price * item.quantity for item in cart_items)
+            order.save()
+            cart_items.delete()
+            return render(request, 'order_success.html', {'order': order})
+    else:
+        form = CheckoutForm()
 
-        if not cart_items:
-            return redirect('cart')
-
-        total_price = sum(item.product.price * item.quantity for item in cart_items)
-
-        order = Order.objects.create(name=name, phone=phone, address=address, total_price=total_price)
-
-        # Очищаем корзину после оформления заказа
-        cart_items.delete()
-
-        return render(request, 'order_success.html', {'order': order})
-
-    return redirect('cart')
+    return render(request, 'checkout.html', {'form': form, 'cart_items': cart_items})
 
 
 
