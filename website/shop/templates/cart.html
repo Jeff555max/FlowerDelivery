@@ -8,7 +8,7 @@
     {% for item in cart_items %}
     <li class="list-group-item d-flex justify-content-between align-items-center">
         {{ item.product.name }} - {{ item.quantity }} шт.
-        <span><strong>{{ item.product.price|floatformat:2 }} × {{ item.quantity }} = {{ item.product.price|floatformat:2|add:item.product.price|mul:item.quantity }} руб.</strong></span>
+        <span><strong>{{ item.product.price|floatformat:2 }} × {{ item.quantity }} = {{ item.total_price|floatformat:2 }} руб.</strong></span>
         <a href="{% url 'remove_from_cart' item.product.id %}" class="btn btn-danger btn-sm">Удалить</a>
     </li>
     {% empty %}

@@ -66,7 +66,14 @@ def update_cart(request, product_id, action):
 def cart(request):
     session_key = request.session.session_key
     cart_items = Cart.objects.filter(session_key=session_key)
-    total_price = sum(item.product.price * item.quantity for item in cart_items)
+
+    # Вычисляем общую стоимость для каждого товара
+    for item in cart_items:
+        item.total_price = item.product.price * item.quantity
+
+    # Общая стоимость всей корзины
+    total_price = sum(item.total_price for item in cart_items)
+
     return render(request, 'cart.html', {'cart_items': cart_items, 'total_price': total_price})
 
 
