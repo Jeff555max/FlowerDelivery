@@ -110,7 +110,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru'
+
 
 TIME_ZONE = 'UTC'
 
@@ -138,5 +139,7 @@ LOGIN_REDIRECT_URL = "profile"
 LOGOUT_REDIRECT_URL = "login"
 
 AUTH_USER_MODEL = 'shop.CustomUser'
+
+
 
 

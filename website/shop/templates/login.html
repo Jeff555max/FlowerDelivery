@@ -4,15 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вход</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <h1>Вход</h1>
-    <form method="post">
-        {% csrf_token %}
-        <input type="text" name="username" placeholder="Имя пользователя" required>
-        <input type="password" name="password" placeholder="Пароль" required>
-        <button type="submit">Войти</button>
-    </form>
-    <p>Нет аккаунта? <a href="{% url 'register' %}">Регистрация</a></p>
+    <div class="container">
+        <h1 class="mt-5">Вход</h1>
+
+        <!-- Вывод сообщений об ошибках -->
+        {% if messages %}
+            <div class="alert alert-danger">
+                {% for message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-success">Войти</button>
+        </form>
+
+        <p class="mt-3">Нет аккаунта? <a href="{% url 'register' %}">Регистрация</a></p>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>
