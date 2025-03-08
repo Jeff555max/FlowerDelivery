@@ -15,11 +15,10 @@
                 <li class="nav-item">
                     <a class="nav-link position-relative" href="{% url 'cart' %}">
                         🛒 Корзина
-                        {% if cart_count > 0 %}
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                {{ cart_count }}
-                            </span>
-                        {% endif %}
+                        <span id="cart-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                              style="{% if cart_count > 0 %}display:inline-block{% else %}display:none{% endif %};">
+                            {{ cart_count }}
+                        </span>
                     </a>
                 </li>
                 {% if user.is_authenticated %}
@@ -41,3 +40,46 @@
         </div>
     </div>
 </nav>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".add-to-cart").forEach(button => {
+            button.replaceWith(button.cloneNode(true));  // Убираем все старые обработчики
+        });
+
+        document.querySelectorAll(".add-to-cart").forEach(button => {
+            button.addEventListener("click", function (event) {
+                event.preventDefault();  // Останавливаем стандартное действие
+                event.stopImmediatePropagation(); // Убираем повторные вызовы
+
+                let productId = this.dataset.productId;
+                let quantity = 1; // Можно изменить, если есть выбор количества
+
+                console.log(`Добавление товара ${productId} в корзину...`);
+
+                fetch(`/add_to_cart/${productId}/${quantity}/`, {
+                    method: "GET",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        alert(data.message);
+                    }
+
+                    let cartBadge = document.getElementById("cart-count");
+                    if (cartBadge) {
+                        cartBadge.textContent = data.cart_count;
+                        cartBadge.style.display = data.cart_count > 0 ? "inline-block" : "none";
+                    }
+
+                    console.log(`✅ Успешно добавлено! Товаров в корзине: ${data.cart_count}`);
+                })
+                .catch(error => console.error("❌ Ошибка при добавлении в корзину:", error));
+            });
+        });
+    });
+</script>
+
