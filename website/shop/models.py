@@ -1,4 +1,18 @@
+from django.contrib.auth.models import AbstractUser
 from django.db import models
+
+
+class CustomUser(AbstractUser):
+    USER_TYPE_CHOICES = (
+        ('individual', 'Частное лицо'),
+        ('company', 'Компания'),
+    )
+    user_type = models.CharField(
+        max_length=10,
+        choices=USER_TYPE_CHOICES,
+        default='individual',
+        verbose_name='Тип пользователя'
+    )
 
 class Product(models.Model):
     name = models.CharField(max_length=255, verbose_name="Название")

@@ -1,14 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
-from .models import Product, Cart, Order
+from .models import Product, Cart, Order, CustomUser
 from django.contrib.auth import login, authenticate, logout
-from django.contrib.auth.models import User
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import Order
-from .forms import CheckoutForm
-
+from .forms import CheckoutForm, CustomUserCreationForm
+from django.contrib.auth.decorators import login_required
 
 
 def index(request):
@@ -108,31 +104,19 @@ def checkout(request):
     return render(request, 'checkout.html', {'form': form, 'cart_items': cart_items})
 
 
-
-
-
 def register(request):
-    """Регистрация нового пользователя"""
+    """Регистрация нового пользователя с выбором типа (Частное лицо / Компания)"""
     if request.method == "POST":
-        username = request.POST["username"]
-        email = request.POST["email"]
-        password = request.POST["password"]
-        password2 = request.POST["password2"]
+        form = CustomUserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, "Вы успешно зарегистрированы!")
+            return redirect("profile")
+    else:
+        form = CustomUserCreationForm()
 
-        if password != password2:
-            messages.error(request, "Пароли не совпадают!")
-            return redirect("register")
-
-        if User.objects.filter(username=username).exists():
-            messages.error(request, "Такое имя пользователя уже занято!")
-            return redirect("register")
-
-        user = User.objects.create_user(username=username, email=email, password=password)
-        login(request, user)
-        messages.success(request, "Вы успешно зарегистрированы!")
-        return redirect("profile")
-
-    return render(request, "register.html")
+    return render(request, "register.html", {"form": form})
 
 
 def user_login(request):
@@ -162,4 +146,3 @@ def profile(request):
     """Личный кабинет пользователя с историей заказов"""
     orders = Order.objects.filter(name=request.user.username)
     return render(request, "profile.html", {"orders": orders})
-
