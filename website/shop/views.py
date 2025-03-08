@@ -34,7 +34,7 @@ def remove_from_cart(request, product_id):
 
 
 def add_to_cart(request, product_id, quantity):
-    """Добавление товара в корзину с выбором количества"""
+    """Добавление товара в корзину с уведомлением"""
     if not request.session.session_key:
         request.session.create()
 
@@ -51,26 +51,31 @@ def add_to_cart(request, product_id, quantity):
 
     cart_item.save()
 
-    return JsonResponse(
-        {
-            "message": f"{quantity} шт. {product.name} добавлено в корзину!",
-            "cart_count": Cart.objects.filter(session_key=session_key).count(),
-        }
-    )
+    # Подсчёт количества товаров в корзине
+    cart_count = Cart.objects.filter(session_key=session_key).count()
+
+    # Добавление сообщения об успешном добавлении
+    messages.success(request, f"{quantity} шт. {product.name} добавлено в корзину!")
+
+    return JsonResponse({
+        "message": f"{quantity} шт. {product.name} добавлено в корзину!",
+        "cart_count": cart_count
+    })
 
 
 def cart(request):
     """Страница корзины"""
     session_key = request.session.session_key
-    if not session_key:
-        request.session.create()
-
     cart_items = Cart.objects.filter(session_key=session_key)
 
     # Вычисляем общую стоимость для каждого товара
-    total_price = sum(item.product.price * item.quantity for item in cart_items)
+    for item in cart_items:
+        item.total_price = item.product.price * item.quantity
 
-    return render(request, "cart.html", {"cart_items": cart_items, "total_price": total_price})
+    # Общая стоимость всей корзины
+    total_price = sum(item.total_price for item in cart_items)
+
+    return render(request, 'cart.html', {'cart_items': cart_items, 'total_price': total_price})
 
 
 def update_cart(request, product_id, action):
