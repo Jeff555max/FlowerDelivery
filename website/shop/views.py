@@ -34,7 +34,7 @@ def remove_from_cart(request, product_id):
 
 
 def add_to_cart(request, product_id, quantity):
-    """Добавление товара в корзину с уведомлением"""
+    """Добавление товара в корзину с выбором количества"""
     if not request.session.session_key:
         request.session.create()
 
@@ -45,21 +45,18 @@ def add_to_cart(request, product_id, quantity):
     cart_item, created = Cart.objects.get_or_create(session_key=session_key, product=product)
 
     if not created:
-        cart_item.quantity += quantity
+        cart_item.quantity += quantity  # ✅ Увеличиваем количество
     else:
         cart_item.quantity = quantity
 
     cart_item.save()
 
-    # Подсчёт количества товаров в корзине
+    # Получаем актуальное количество товаров в корзине
     cart_count = Cart.objects.filter(session_key=session_key).count()
-
-    # Добавление сообщения об успешном добавлении
-    messages.success(request, f"{quantity} шт. {product.name} добавлено в корзину!")
 
     return JsonResponse({
         "message": f"{quantity} шт. {product.name} добавлено в корзину!",
-        "cart_count": cart_count
+        "cart_count": cart_count  # ✅ Возвращаем количество товаров
     })
 
 

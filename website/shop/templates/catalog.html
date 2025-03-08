@@ -24,28 +24,38 @@
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-    document.querySelectorAll(".add-to-cart").forEach(button => {
-        button.addEventListener("click", function () {
-            let productId = this.dataset.productId;
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll(".add-to-cart").forEach(button => {
+            button.addEventListener("click", function(event) {
+                event.preventDefault();
 
-            fetch(`/add_to_cart/${productId}/1/`, {
-                method: "GET"
-            })
-            .then(response => response.json())
-            .then(data => {
-                let messageBox = document.getElementById("cart-message");
-                messageBox.innerText = data.message;
-                messageBox.classList.remove("d-none");
+                let productId = this.dataset.productId;
+                let quantity = 1; // Можно изменить, если есть выбор количества
 
-                setTimeout(() => {
-                    messageBox.classList.add("d-none");
-                }, 3000);
-
-                document.getElementById("cart-count").innerText = data.cart_count;
+                fetch(`/add_to_cart/${productId}/${quantity}/`, {
+                    method: "GET",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        alert(data.message); // Можно заменить на красивое уведомление
+                    }
+                    // Обновляем значок корзины
+                    let cartBadge = document.getElementById("cart-count");
+                    if (cartBadge) {
+                        cartBadge.textContent = data.cart_count;
+                        cartBadge.style.display = data.cart_count > 0 ? "inline-block" : "none";
+                    }
+                })
+                .catch(error => console.error("Ошибка при добавлении в корзину:", error));
             });
         });
     });
-});
 </script>
+
 {% endblock %}
+
+
