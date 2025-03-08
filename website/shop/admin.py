@@ -1,5 +1,29 @@
 from django.contrib import admin
 from .models import Product, Order, Cart
+from django.contrib.auth.admin import UserAdmin
+from .models import CustomUser
+
+class CustomUserAdmin(UserAdmin):
+    model = CustomUser
+    list_display = ('username', 'email', 'user_type', 'is_staff', 'is_active', 'date_joined')
+    list_filter = ('user_type', 'is_staff', 'is_active')
+    fieldsets = (
+        (None, {'fields': ('username', 'email', 'password')}),
+        ('Персональная информация', {'fields': ('first_name', 'last_name', 'user_type')}),
+        ('Разрешения', {'fields': ('is_staff', 'is_active', 'groups', 'user_permissions')}),
+        ('Даты', {'fields': ('last_login', 'date_joined')}),
+    )
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('username', 'email', 'user_type', 'password1', 'password2', 'is_staff', 'is_active')}
+        ),
+    )
+    search_fields = ('username', 'email')
+    ordering = ('date_joined',)
+
+admin.site.register(CustomUser, CustomUserAdmin)
+
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
