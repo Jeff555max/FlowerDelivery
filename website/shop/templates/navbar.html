@@ -13,7 +13,14 @@
                     <a class="nav-link" href="{% url 'catalog' %}">Каталог</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'cart' %}">🛒 Корзина</a>
+                    <a class="nav-link position-relative" href="{% url 'cart' %}">
+                        🛒 Корзина
+                        {% if cart_count > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ cart_count }}
+                            </span>
+                        {% endif %}
+                    </a>
                 </li>
                 {% if user.is_authenticated %}
                 <li class="nav-item">
