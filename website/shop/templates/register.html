@@ -10,6 +10,14 @@
 <body>
     <div class="container">
         <h1 class="mt-5">Регистрация</h1>
+        {% if messages %}
+    <div class="alert alert-danger">
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    </div>
+{% endif %}
+
         <form method="post">
             {% csrf_token %}
             <div class="form-group">

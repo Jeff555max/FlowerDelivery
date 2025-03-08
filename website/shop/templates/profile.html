@@ -14,5 +14,11 @@
     <p>Вы ещё не делали заказов.</p>
     {% endfor %}
 </ul>
-<a href="{% url 'logout' %}" class="btn btn-danger mt-3">Выйти</a>
+
+<!-- Кнопка "Вернуться в каталог" -->
+<a href="{% url 'catalog' %}" class="btn btn-primary mt-3">Вернуться в каталог</a>
+
+<!-- Кнопка "Выйти" -->
+<a href="{% url 'logout' %}" class="btn btn-danger mt-3 ml-2">Выйти</a>
+
 {% endblock %}

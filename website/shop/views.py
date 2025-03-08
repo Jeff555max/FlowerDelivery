@@ -7,6 +7,9 @@ from .forms import CheckoutForm, CustomUserCreationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+
 
 def index(request):
     return render(request, "index.html")
@@ -115,18 +118,32 @@ def checkout(request):
     return render(request, "checkout.html", {"form": form, "cart_items": cart_items})
 
 
+
+
+
 def register(request):
-    """Регистрация нового пользователя"""
+    """Регистрация пользователя с валидацией пароля"""
     if request.method == "POST":
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)  # Авторизация после регистрации
+            user = form.save(commit=False)
+
+            # Проверка сложности пароля
+            password = form.cleaned_data.get("password1")
+            try:
+                validate_password(password, user)
+            except ValidationError as e:
+                for error in e.messages:
+                    messages.error(request, error)
+                return render(request, "register.html", {"form": form})
+
+            user.set_password(password)  # Устанавливаем пароль
+            user.save()
+            login(request, user)
             messages.success(request, "Вы успешно зарегистрировались!")
-            return redirect("profile")  # Редирект на профиль после входа
+            return redirect("profile")
         else:
             messages.error(request, "Ошибка регистрации. Проверьте данные.")
-
     else:
         form = CustomUserCreationForm()
 
@@ -151,11 +168,21 @@ def user_login(request):
     return render(request, "login.html", {"form": form})
 
 
+
+
 def user_logout(request):
     """Выход пользователя"""
+    if not request.user.is_authenticated:
+        print("Пользователь не был авторизован")  # Проверка
+        return redirect("login")
+
+    print(f"Пользователь {request.user} выходит из системы")  # Лог в консоли
     logout(request)
-    messages.success(request, "Вы успешно вышли из системы.")
+    messages.success(request, "Вы успешно вышли из системы!")  # Сообщение
     return redirect("login")
+
+
+
 
 
 @login_required
