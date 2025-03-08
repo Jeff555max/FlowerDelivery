@@ -6,9 +6,9 @@ from django.contrib import messages
 from .forms import CheckoutForm, CustomUserCreationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
-
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+
 
 
 def index(request):
@@ -118,32 +118,28 @@ def checkout(request):
     return render(request, "checkout.html", {"form": form, "cart_items": cart_items})
 
 
-
-
-
 def register(request):
-    """Регистрация пользователя с валидацией пароля"""
     if request.method == "POST":
         form = CustomUserCreationForm(request.POST)
+
         if form.is_valid():
-            user = form.save(commit=False)
-
-            # Проверка сложности пароля
+            username = form.cleaned_data.get("username")
             password = form.cleaned_data.get("password1")
-            try:
-                validate_password(password, user)
-            except ValidationError as e:
-                for error in e.messages:
-                    messages.error(request, error)
-                return render(request, "register.html", {"form": form})
 
-            user.set_password(password)  # Устанавливаем пароль
-            user.save()
-            login(request, user)
-            messages.success(request, "Вы успешно зарегистрировались!")
-            return redirect("profile")
+            # Проверка пароля на сложность
+            try:
+                validate_password(password)
+            except ValidationError as e:
+                form.add_error("password1", e)
+
+            if not form.errors:
+                user = form.save()
+                login(request, user)  # Авторизация после регистрации
+                messages.success(request, "Вы успешно зарегистрировались!")
+                return redirect("profile")
         else:
             messages.error(request, "Ошибка регистрации. Проверьте данные.")
+
     else:
         form = CustomUserCreationForm()
 
