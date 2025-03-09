@@ -27,7 +27,6 @@ def remove_from_cart(request, product_id):
     return redirect("cart")
 
 def add_to_cart(request, product_id, quantity):
-    """Добавление товара в корзину с выбором количества"""
     if not request.session.session_key:
         request.session.create()
     session_key = request.session.session_key
@@ -36,19 +35,22 @@ def add_to_cart(request, product_id, quantity):
         quantity = int(quantity)
     except ValueError:
         quantity = 1
+
     cart_item, created = Cart.objects.get_or_create(session_key=session_key, product=product)
     if not created:
-        cart_item.quantity += quantity  # Прибавляем выбранное количество
+        cart_item.quantity += quantity
     else:
         cart_item.quantity = quantity
     cart_item.save()
-    # Подсчитываем общее количество товаров (сумма по количествам)
+
     cart_items = Cart.objects.filter(session_key=session_key)
     cart_count = sum(item.quantity for item in cart_items)
+
     return JsonResponse({
         "message": f"{quantity} шт. {product.name} добавлено в корзину!",
         "cart_count": cart_count
     })
+
 
 def cart(request):
     """Страница корзины"""

@@ -11,11 +11,38 @@
         {% for product in products %}
         <div class="col-md-4">
             <div class="card mb-4">
+                {% if product.image %}
                 <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                {% else %}
+                <img src="https://via.placeholder.com/150" class="card-img-top" alt="{{ product.name }}">
+                {% endif %}
                 <div class="card-body">
                     <h5 class="card-title">{{ product.name }}</h5>
                     <p class="card-text">{{ product.price }} руб.</p>
-                    <button class="btn btn-primary add-to-cart" data-product-id="{{ product.id }}">Добавить в корзину</button>
+                    <!-- Кнопки +/− и поле ввода -->
+                    <div class="input-group" style="max-width: 200px; margin-bottom: 10px;">
+                        <button
+                            type="button"
+                            class="btn btn-outline-secondary btn-lg"
+                            onclick="decrementCatalogQuantity('{{ product.id }}')"
+                        >−</button>
+                        <input
+                            type="number"
+                            id="catalog-quantity-{{ product.id }}"
+                            value="1"
+                            min="1"
+                            class="form-control text-center"
+                            style="max-width: 70px; font-size: 1.2em;"
+                        >
+                        <button
+                            type="button"
+                            class="btn btn-outline-secondary btn-lg"
+                            onclick="incrementCatalogQuantity('{{ product.id }}')"
+                        >+</button>
+                    </div>
+                    <button class="btn btn-primary add-to-cart" data-product-id="{{ product.id }}">
+                        Добавить в корзину
+                    </button>
                 </div>
             </div>
         </div>
@@ -24,38 +51,60 @@
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        document.querySelectorAll(".add-to-cart").forEach(button => {
-            button.addEventListener("click", function(event) {
-                event.preventDefault();
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll(".add-to-cart").forEach(button => {
+        button.addEventListener("click", function(event) {
+            event.preventDefault();
+            let productId = this.dataset.productId;
+            let quantityInput = document.getElementById("catalog-quantity-" + productId);
+            let quantity = quantityInput ? parseInt(quantityInput.value) : 1;
+            if (isNaN(quantity) || quantity < 1) {
+                quantity = 1;
+            }
 
-                let productId = this.dataset.productId;
-                let quantity = 1; // Можно изменить, если есть выбор количества
+            console.log(`Нажали "Добавить в корзину": товар ${productId}, поле =`, quantityInput.value, ", используем =", quantity);
 
-                fetch(`/add_to_cart/${productId}/${quantity}/`, {
-                    method: "GET",
-                    headers: {
-                        "X-Requested-With": "XMLHttpRequest"
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.message) {
-                        alert(data.message); // Можно заменить на красивое уведомление
-                    }
-                    // Обновляем значок корзины
-                    let cartBadge = document.getElementById("cart-count");
-                    if (cartBadge) {
-                        cartBadge.textContent = data.cart_count;
-                        cartBadge.style.display = data.cart_count > 0 ? "inline-block" : "none";
-                    }
-                })
-                .catch(error => console.error("Ошибка при добавлении в корзину:", error));
-            });
+            let addToCartUrl = `/add_to_cart/${productId}/${quantity}/`;
+            console.log("Полный URL для запроса:", addToCartUrl);
+
+            fetch(addToCartUrl, {
+                method: "GET",
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert(data.message);
+                }
+                let cartBadge = document.getElementById("cart-count");
+                if (cartBadge) {
+                    cartBadge.textContent = data.cart_count;
+                    cartBadge.style.display = data.cart_count > 0 ? "inline-block" : "none";
+                }
+            })
+            .catch(error => console.error("Ошибка при добавлении в корзину:", error));
         });
     });
+});
+
+// Функции для кнопок +/−
+function incrementCatalogQuantity(productId) {
+    let input = document.getElementById("catalog-quantity-" + productId);
+    if (input) {
+        let currentVal = parseInt(input.value) || 1;
+        input.value = currentVal + 1;
+    }
+}
+function decrementCatalogQuantity(productId) {
+    let input = document.getElementById("catalog-quantity-" + productId);
+    if (input) {
+        let currentVal = parseInt(input.value) || 1;
+        if (currentVal > 1) {
+            input.value = currentVal - 1;
+        } else {
+            input.value = 1;
+        }
+    }
+}
 </script>
-
 {% endblock %}
-
-
