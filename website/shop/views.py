@@ -112,6 +112,27 @@ def checkout(request):
         form = CheckoutForm()
     return render(request, "checkout.html", {"form": form, "cart_items": cart_items})
 
+def update_cart_bulk(request):
+    """Обновление количества товаров в корзине через одну форму и переход к оформлению заказа"""
+    session_key = request.session.session_key
+    if not session_key:
+        messages.error(request, "Сессия не найдена.")
+        return redirect("cart")
+    cart_items = Cart.objects.filter(session_key=session_key)
+    if request.method == "POST":
+        for item in cart_items:
+            new_quantity = request.POST.get(f"quantity_{item.product.id}")
+            if new_quantity:
+                try:
+                    new_quantity = int(new_quantity)
+                    if new_quantity < 1:
+                        new_quantity = 1
+                    item.quantity = new_quantity
+                    item.save()
+                except ValueError:
+                    continue
+    return redirect("checkout")
+
 def register(request):
     if request.method == "POST":
         form = CustomUserCreationForm(request.POST)
@@ -161,23 +182,3 @@ def profile(request):
     """Личный кабинет пользователя с историей заказов"""
     orders = Order.objects.filter(name=request.user.username)
     return render(request, "profile.html", {"orders": orders})
-
-def update_cart_quantity(request, product_id):
-    """Обновление количества товара в корзине через POST-запрос (форма)"""
-    session_key = request.session.session_key
-    if not session_key:
-        messages.error(request, "Сессия не найдена.")
-        return redirect("cart")
-    cart_item = get_object_or_404(Cart, session_key=session_key, product_id=product_id)
-    if request.method == "POST":
-        quantity_str = request.POST.get("quantity")
-        try:
-            quantity = int(quantity_str)
-            if quantity < 1:
-                quantity = 1
-        except (ValueError, TypeError):
-            quantity = cart_item.quantity
-        cart_item.quantity = quantity
-        cart_item.save()
-        messages.success(request, "Количество обновлено!")
-    return redirect("cart")

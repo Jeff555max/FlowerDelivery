@@ -4,7 +4,10 @@
 
 {% block content %}
 <h1>Корзина</h1>
+
 {% if cart_items %}
+<form method="post" action="{% url 'update_cart_bulk' %}">
+    {% csrf_token %}
     <table class="table">
         <thead>
             <tr>
@@ -17,33 +20,126 @@
         </thead>
         <tbody>
             {% for item in cart_items %}
-                <tr>
-                    <td>{{ item.product.name }}</td>
-                    <td>
-                        <form method="post" action="{% url 'update_cart_quantity' item.product.id %}">
-                            {% csrf_token %}
-                            <input type="number" name="quantity" value="{{ item.quantity }}" min="1" class="form-control" style="width: 80px; display: inline-block;">
-                            <button type="submit" class="btn btn-sm btn-primary">Обновить</button>
-                        </form>
-                    </td>
-                    <td>{{ item.product.price|floatformat:2 }} руб.</td>
-                    <td>{{ item.total_price|floatformat:2 }} руб.</td>
-                    <td>
-                        <a href="{% url 'remove_from_cart' item.product.id %}" class="btn btn-danger btn-sm">Удалить</a>
-                    </td>
-                </tr>
+            <!-- Храним цену в атрибуте data-price, чтобы JS мог легко её получить -->
+            <tr data-price="{{ item.product.price }}">
+                <td>{{ item.product.name }}</td>
+                <td>
+                    <!-- При изменении quantity JS будет пересчитывать сумму -->
+                    <input
+                        type="number"
+                        name="quantity_{{ item.product.id }}"
+                        class="form-control cart-quantity"
+                        style="width: 80px;"
+                        value="{{ item.quantity }}"
+                        min="1"
+                    >
+                </td>
+                <td>{{ item.product.price|floatformat:2 }} руб.</td>
+                <!-- Ячейка для отображения текущей суммы по этому товару -->
+                <td class="item-total">
+                    {{ item.total_price|floatformat:2 }} руб.
+                </td>
+                <td>
+                    <!-- Удаление товара из корзины -->
+                    <a href="{% url 'remove_from_cart' item.product.id %}" class="btn btn-danger btn-sm">
+                        Удалить
+                    </a>
+                </td>
+            </tr>
             {% endfor %}
         </tbody>
         <tfoot>
             <tr>
-                <td colspan="3"><strong>Итого:</strong></td>
-                <td><strong>{{ total_price|floatformat:2 }} руб.</strong></td>
+                <td colspan="3">
+                    <strong>Итого:</strong>
+                </td>
+                <!-- Ячейка с общей суммой по всей корзине -->
+                <td>
+                    <strong id="cart-total">
+                        {{ total_price|floatformat:2 }} руб.
+                    </strong>
+                </td>
                 <td></td>
             </tr>
         </tfoot>
     </table>
-    <a href="{% url 'checkout' %}" class="btn btn-primary">Оформить заказ</a>
+
+    <!-- Кнопка, при нажатии которой новые количества отправятся на сервер
+         (update_cart_bulk) и пользователь перейдёт к оформлению заказа -->
+    <button type="submit" class="btn btn-primary">
+        Оформить заказ
+    </button>
+</form>
 {% else %}
-    <p>Ваша корзина пуста.</p>
+<p>Ваша корзина пуста.</p>
 {% endif %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Находим все поля ввода количества
+    const quantityInputs = document.querySelectorAll(".cart-quantity");
+
+    // Вешаем обработчик события 'input' (или 'change') на каждое поле
+    quantityInputs.forEach(input => {
+        input.addEventListener("input", function() {
+            updateItemTotal(this);
+        });
+    });
+
+    /**
+     * Пересчитывает сумму по конкретному товару и обновляет общую сумму корзины
+     */
+    function updateItemTotal(inputElement) {
+        // Находим строку <tr>, в которой лежит это поле
+        const row = inputElement.closest("tr");
+
+        // Берём базовую цену товара из data-атрибута
+        const price = parseFloat(row.dataset.price);
+
+        // Текущее количество (если поле пустое, берём 1)
+        let quantity = parseInt(inputElement.value);
+        if (isNaN(quantity) || quantity < 1) {
+            quantity = 1;
+            inputElement.value = 1; // Исправляем на 1, если ввели некорректное значение
+        }
+
+        // Ищем ячейку с классом .item-total
+        const itemTotalCell = row.querySelector(".item-total");
+        // Пересчитываем сумму для этой позиции
+        const newTotal = price * quantity;
+        // Обновляем текст в ячейке
+        itemTotalCell.textContent = newTotal.toFixed(2) + " руб.";
+
+        // Обновляем общую сумму по корзине
+        updateCartTotal();
+    }
+
+    /**
+     * Пересчитывает итоговую сумму по всей корзине
+     */
+    function updateCartTotal() {
+        let sum = 0;
+        // Находим все строки с data-price
+        const rows = document.querySelectorAll("tr[data-price]");
+        rows.forEach(row => {
+            // Ищем ячейку с классом .item-total
+            const itemTotalCell = row.querySelector(".item-total");
+            if (itemTotalCell) {
+                // itemTotalCell.textContent, например: "620.00 руб."
+                const text = itemTotalCell.textContent.replace(" руб.", "").trim();
+                const itemSum = parseFloat(text);
+                if (!isNaN(itemSum)) {
+                    sum += itemSum;
+                }
+            }
+        });
+
+        // Обновляем ячейку с ID cart-total
+        const cartTotalElement = document.getElementById("cart-total");
+        if (cartTotalElement) {
+            cartTotalElement.textContent = sum.toFixed(2) + " руб.";
+        }
+    }
+});
+</script>
 {% endblock %}
