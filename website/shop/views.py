@@ -13,7 +13,6 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 def index(request):
     return render(request, "index.html")
 
-
 def catalog(request):
     products_list = Product.objects.all()
     paginator = Paginator(products_list, 9)  # 9 товаров на страницу
@@ -25,16 +24,6 @@ def catalog(request):
     except EmptyPage:
         products = paginator.page(paginator.num_pages)
     return render(request, "catalog.html", {"products": products})
-
-
-def remove_from_cart(request, product_id):
-    """Удаление товара из корзины"""
-    session_key = request.session.session_key
-    if not session_key:
-        return redirect("cart")
-    cart_item = get_object_or_404(Cart, session_key=session_key, product_id=product_id)
-    cart_item.delete()
-    return redirect("cart")
 
 def add_to_cart(request, product_id, quantity):
     if not request.session.session_key:
@@ -61,9 +50,15 @@ def add_to_cart(request, product_id, quantity):
         "cart_count": cart_count
     })
 
+def remove_from_cart(request, product_id):
+    session_key = request.session.session_key
+    if not session_key:
+        return redirect("cart")
+    cart_item = get_object_or_404(Cart, session_key=session_key, product_id=product_id)
+    cart_item.delete()
+    return redirect("cart")
 
 def cart(request):
-    """Страница корзины"""
     session_key = request.session.session_key
     cart_items = Cart.objects.filter(session_key=session_key)
     for item in cart_items:
@@ -71,61 +66,12 @@ def cart(request):
     total_price = sum(item.total_price for item in cart_items)
     return render(request, 'cart.html', {'cart_items': cart_items, 'total_price': total_price})
 
-def update_cart(request, product_id, action):
-    """Обновление количества товара в корзине через AJAX GET-запросы"""
-    session_key = request.session.session_key
-    if not session_key:
-        return JsonResponse({"message": "Ошибка! Сессия не найдена."}, status=400)
-    cart_item = get_object_or_404(Cart, session_key=session_key, product_id=product_id)
-    if action == "increase":
-        cart_item.quantity += 1
-    elif action == "decrease":
-        if cart_item.quantity > 1:
-            cart_item.quantity -= 1
-        else:
-            cart_item.delete()
-            cart_items = Cart.objects.filter(session_key=session_key)
-            cart_total = sum(item.product.price * item.quantity for item in cart_items)
-            return JsonResponse({"message": "Товар удалён из корзины", "cart_total": float(cart_total)})
-    elif action == "remove":
-        cart_item.delete()
-        cart_items = Cart.objects.filter(session_key=session_key)
-        cart_total = sum(item.product.price * item.quantity for item in cart_items)
-        return JsonResponse({"message": "Товар удалён из корзины", "cart_total": float(cart_total)})
-    cart_item.save()
-    item_total = cart_item.product.price * cart_item.quantity
-    cart_items = Cart.objects.filter(session_key=session_key)
-    cart_total = sum(item.product.price * item.quantity for item in cart_items)
-    return JsonResponse({
-        "message": "Количество обновлено!",
-        "quantity": cart_item.quantity,
-        "item_total": float(item_total),
-        "cart_total": float(cart_total)
-    })
-
-@login_required
-def checkout(request):
-    """Оформление заказа"""
-    session_key = request.session.session_key
-    cart_items = Cart.objects.filter(session_key=session_key)
-    if not cart_items:
-        messages.warning(request, "Ваша корзина пуста.")
-        return redirect("cart")
-    if request.method == "POST":
-        form = CheckoutForm(request.POST)
-        if form.is_valid():
-            order = form.save(commit=False)
-            order.total_price = sum(item.product.price * item.quantity for item in cart_items)
-            order.save()
-            cart_items.delete()
-            messages.success(request, "Заказ успешно оформлен!")
-            return redirect("profile")
-    else:
-        form = CheckoutForm()
-    return render(request, "checkout.html", {"form": form, "cart_items": cart_items})
-
+@login_required(login_url='register')
 def update_cart_bulk(request):
-    """Обновление количества товаров в корзине через одну форму и переход к оформлению заказа"""
+    """
+    Обновление количества товаров через одну форму.
+    Если пользователь не авторизован, перенаправляем на регистрацию.
+    """
     session_key = request.session.session_key
     if not session_key:
         messages.error(request, "Сессия не найдена.")
@@ -144,6 +90,30 @@ def update_cart_bulk(request):
                 except ValueError:
                     continue
     return redirect("checkout")
+
+@login_required(login_url='register')
+def checkout(request):
+    """
+    Оформление заказа.
+    Неавторизованных пользователей перенаправляет на страницу регистрации.
+    """
+    session_key = request.session.session_key
+    cart_items = Cart.objects.filter(session_key=session_key)
+    if not cart_items:
+        messages.warning(request, "Ваша корзина пуста.")
+        return redirect("cart")
+    if request.method == "POST":
+        form = CheckoutForm(request.POST)
+        if form.is_valid():
+            order = form.save(commit=False)
+            order.total_price = sum(item.product.price * item.quantity for item in cart_items)
+            order.save()
+            cart_items.delete()
+            messages.success(request, "Заказ успешно оформлен!")
+            return redirect("profile")
+    else:
+        form = CheckoutForm()
+    return render(request, "checkout.html", {"form": form, "cart_items": cart_items})
 
 def register(request):
     if request.method == "POST":
