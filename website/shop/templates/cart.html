@@ -5,7 +5,6 @@
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-10">
-    <!-- Заголовок по центру -->
     <h1 class="text-center mb-4">Корзина</h1>
     {% if cart_items %}
     <form method="post" action="{% url 'update_cart_bulk' %}">
@@ -47,7 +46,6 @@
           </tr>
         </tfoot>
       </table>
-      <!-- Кнопка Оформить заказ по центру -->
       <div class="text-center">
         <button type="submit" class="btn btn-primary">Оформить заказ</button>
       </div>
@@ -57,16 +55,17 @@
     {% endif %}
   </div>
 </div>
-
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    const quantityInputs = document.querySelectorAll(".cart-quantity");
+    // Обработчик изменения значения в полях количества
+    const quantityInputs = document.querySelectorAll("input.cart-quantity");
     quantityInputs.forEach(input => {
         input.addEventListener("input", function() {
             updateItemTotal(this);
+            updateCartBadge();
         });
     });
 
@@ -100,8 +99,25 @@ document.addEventListener("DOMContentLoaded", function() {
             cartTotalElement.textContent = sum.toFixed(2) + " руб.";
         }
     }
+
+    // Новая функция для обновления значка корзины (cart_count) в навбаре
+    function updateCartBadge() {
+        let totalCount = 0;
+        document.querySelectorAll("input.cart-quantity").forEach(function(input) {
+            totalCount += parseInt(input.value) || 0;
+        });
+        const cartBadge = document.getElementById("cart-count");
+        if (cartBadge) {
+            cartBadge.textContent = totalCount;
+            cartBadge.style.display = totalCount > 0 ? "inline-block" : "none";
+        }
+    }
+
+    // Вызываем обновление значка при загрузке страницы
+    updateCartBadge();
 });
 
+// Функции для кнопок увеличения/уменьшения
 function incrementQuantity(productId) {
     var input = document.getElementById("quantity-" + productId);
     if (input) {
