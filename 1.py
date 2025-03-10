@@ -64,6 +64,7 @@ def cart(request):
     for item in cart_items:
         item.total_price = item.product.price * item.quantity
     total_price = sum(item.total_price for item in cart_items)
+    # Передаем cart_count для навбара
     cart_count = sum(item.quantity for item in cart_items)
     return render(request, 'cart.html', {
         'cart_items': cart_items,
@@ -100,6 +101,7 @@ def update_cart_bulk(request):
 def checkout(request):
     """
     Оформление заказа.
+    Неавторизованных пользователей перенаправляет на страницу регистрации.
     Независимо от того, что введено в поле 'name' формы, заказ связывается с request.user.
     """
     session_key = request.session.session_key
@@ -112,8 +114,10 @@ def checkout(request):
         if form.is_valid():
             order = form.save(commit=False)
             order.total_price = sum(item.product.price * item.quantity for item in cart_items)
-            order.user = request.user  # Заказ привязывается к авторизованному пользователю
-            order.name = request.user.username  # Переопределяем поле name
+            order.user = request.user  # Связываем заказ с авторизованным пользователем
+            # Переопределяем поле name, чтобы оно соответствовало имени пользователя,
+            # даже если пользователь ввёл другое имя в форме.
+            order.name = request.user.username
             order.save()
             cart_items.delete()
             messages.success(request, "Заказ успешно оформлен!")
@@ -121,6 +125,7 @@ def checkout(request):
     else:
         form = CheckoutForm()
     return render(request, "checkout.html", {"form": form, "cart_items": cart_items})
+
 
 def register(request):
     if request.method == "POST":
@@ -168,5 +173,9 @@ def user_logout(request):
 
 @login_required
 def profile(request):
+    """
+    Личный кабинет пользователя. Заказы выводятся по связи с request.user,
+    а не по введённому в форме имени.
+    """
     orders = Order.objects.filter(user=request.user)
     return render(request, "profile.html", {"orders": orders})

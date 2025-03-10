@@ -1,8 +1,9 @@
 from django import forms
-from .models import Order, CustomUser
+from .models import Order
 from django.contrib.auth.forms import UserCreationForm
-from django.core.exceptions import ValidationError
+from .models import CustomUser
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 
 User = get_user_model()
 

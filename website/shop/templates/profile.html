@@ -3,25 +3,24 @@
 {% block title %}Личный кабинет{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-8 text-center">
-    <h2 class="mb-4">Добро пожаловать, {{ user.username }}!</h2>
-    <h3>Ваши заказы:</h3>
-    {% if orders %}
-      <ul class="list-group text-center">
-        {% for order in orders %}
-          <li class="list-group-item">
-            Заказ #{{ order.id }} - {{ order.total_price|floatformat:2 }} руб. ({{ order.get_status_display_rus }})
-          </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p>Вы ещё не делали заказов.</p>
-    {% endif %}
-    <div class="mt-4">
-      <a href="{% url 'catalog' %}" class="btn btn-primary">Вернуться в каталог</a>
-      <a href="{% url 'logout' %}" class="btn btn-danger ms-2">Выйти</a>
-    </div>
+<div class="container mt-4">
+  <h2 class="text-center mb-4">Личный кабинет</h2>
+  <h3 class="text-center">Ваши заказы:</h3>
+  {% if orders %}
+    <ul class="list-group">
+      {% for order in orders %}
+      <li class="list-group-item text-center">
+        Заказ #{{ order.id }} – {{ order.total_price|floatformat:2 }} руб.
+        (<strong>{{ order.get_status_display_rus }}</strong>)
+      </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-center">Вы ещё не делали заказов.</p>
+  {% endif %}
+  <div class="text-center mt-4">
+    <a href="{% url 'catalog' %}" class="btn btn-primary">Вернуться в каталог</a>
+    <a href="{% url 'logout' %}" class="btn btn-danger ms-2">Выйти</a>
   </div>
 </div>
 {% endblock %}
