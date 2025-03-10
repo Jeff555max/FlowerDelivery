@@ -7,20 +7,33 @@
     <h2>Каталог товаров</h2>
     <div id="cart-message" class="alert alert-success d-none"></div>
 
+    <!-- Стили для единообразного размера карточек и картинок -->
+    <style>
+    /* Фиксируем высоту изображения и обрезаем края (object-fit: cover). */
+    .fixed-img {
+        width: 100%;
+        height: 200px; /* можно изменить высоту по желанию */
+        object-fit: cover;
+    }
+    /* Если хотите, чтобы и вся карточка имела единый размер, можно задать min-height.
+       Но обычно достаточно выровнять только изображения. */
+    </style>
+
     <div class="row">
         {% for product in products %}
-        <div class="col-md-4">
-            <div class="card mb-4">
+        <div class="col-md-4 d-flex align-items-stretch">
+            <div class="card mb-4 w-100">
                 {% if product.image %}
-                <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                <img src="{{ product.image.url }}" class="card-img-top fixed-img" alt="{{ product.name }}">
                 {% else %}
-                <img src="https://via.placeholder.com/150" class="card-img-top" alt="{{ product.name }}">
+                <img src="https://via.placeholder.com/300x200" class="card-img-top fixed-img" alt="{{ product.name }}">
                 {% endif %}
-                <div class="card-body">
+                <div class="card-body d-flex flex-column">
                     <h5 class="card-title">{{ product.name }}</h5>
                     <p class="card-text">{{ product.price }} руб.</p>
-                    <!-- Кнопки +/− и поле ввода -->
-                    <div class="input-group" style="max-width: 200px; margin-bottom: 10px;">
+
+                    <!-- Блок с кнопками +/− -->
+                    <div class="input-group mb-3" style="max-width: 200px;">
                         <button
                             type="button"
                             class="btn btn-outline-secondary btn-lg"
@@ -40,7 +53,9 @@
                             onclick="incrementCatalogQuantity('{{ product.id }}')"
                         >+</button>
                     </div>
-                    <button class="btn btn-primary add-to-cart" data-product-id="{{ product.id }}">
+
+                    <!-- Кнопка добавления в корзину -->
+                    <button class="btn btn-primary mt-auto add-to-cart" data-product-id="{{ product.id }}">
                         Добавить в корзину
                     </button>
                 </div>
@@ -52,21 +67,19 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+    // Навешиваем обработчики на кнопки "Добавить в корзину"
     document.querySelectorAll(".add-to-cart").forEach(button => {
         button.addEventListener("click", function(event) {
             event.preventDefault();
             let productId = this.dataset.productId;
+            // Получаем выбранное количество
             let quantityInput = document.getElementById("catalog-quantity-" + productId);
             let quantity = quantityInput ? parseInt(quantityInput.value) : 1;
             if (isNaN(quantity) || quantity < 1) {
                 quantity = 1;
             }
-
-            console.log(`Нажали "Добавить в корзину": товар ${productId}, поле =`, quantityInput.value, ", используем =", quantity);
-
+            // Формируем URL и отправляем запрос
             let addToCartUrl = `/add_to_cart/${productId}/${quantity}/`;
-            console.log("Полный URL для запроса:", addToCartUrl);
-
             fetch(addToCartUrl, {
                 method: "GET",
                 headers: { "X-Requested-With": "XMLHttpRequest" }
@@ -87,7 +100,7 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 
-// Функции для кнопок +/−
+// Увеличение количества
 function incrementCatalogQuantity(productId) {
     let input = document.getElementById("catalog-quantity-" + productId);
     if (input) {
@@ -95,6 +108,8 @@ function incrementCatalogQuantity(productId) {
         input.value = currentVal + 1;
     }
 }
+
+// Уменьшение количества
 function decrementCatalogQuantity(productId) {
     let input = document.getElementById("catalog-quantity-" + productId);
     if (input) {
