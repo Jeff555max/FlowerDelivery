@@ -70,6 +70,7 @@ TEMPLATES = [
                 'shop.context_processors.cart_count',
 
 
+
             ],
         },
     },

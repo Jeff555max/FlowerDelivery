@@ -1,42 +1,42 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <div class="container">
-        <a class="navbar-brand fw-bold" href="{% url 'index' %}">🌸 Магазин цветов</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'index' %}">Главная</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'catalog' %}">Каталог</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link position-relative" href="{% url 'cart' %}">
-                        🛒 Корзина
-                        <span id="cart-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                              style="{% if cart_count > 0 %}display:inline-block{% else %}display:none{% endif %};">
-                            {{ cart_count }}
-                        </span>
-                    </a>
-                </li>
-                {% if user.is_authenticated %}
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'profile' %}">👤 Личный кабинет</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-danger" href="{% url 'logout' %}">🚪 Выйти</a>
-                </li>
-                {% else %}
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'login' %}">Вход</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'register' %}">Регистрация</a>
-                </li>
-                {% endif %}
-            </ul>
-        </div>
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="{% url 'index' %}">🌸 Магазин цветов</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'index' %}">Главная</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'catalog' %}">Каталог</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link position-relative" href="{% url 'cart' %}">
+            🛒 Корзина
+            <span id="cart-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  style="{% if cart_count > 0 %}display:inline-block{% else %}display:none{% endif %};">
+              {{ cart_count }}
+            </span>
+          </a>
+        </li>
+        {% if user.is_authenticated %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'profile' %}">👤 Личный кабинет</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-danger" href="{% url 'logout' %}">🚪 Выйти</a>
+        </li>
+        {% else %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'login' %}">Вход</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'register' %}">Регистрация</a>
+        </li>
+        {% endif %}
+      </ul>
     </div>
+  </div>
 </nav>

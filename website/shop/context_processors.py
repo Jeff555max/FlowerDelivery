@@ -1,10 +1,9 @@
 from .models import Cart
 
 def cart_count(request):
-    """Передает количество товаров в корзине во все шаблоны"""
+    if not request.session.session_key:
+        request.session.create()
     session_key = request.session.session_key
-    if not session_key:
-        return {'cart_count': 0}
-
-    cart_items_count = Cart.objects.filter(session_key=session_key).count()
-    return {'cart_count': cart_items_count}
+    cart_items = Cart.objects.filter(session_key=session_key)
+    count = sum(item.quantity for item in cart_items)
+    return {'cart_count': count}
