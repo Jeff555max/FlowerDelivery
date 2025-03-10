@@ -66,7 +66,13 @@ def cart(request):
     for item in cart_items:
         item.total_price = item.product.price * item.quantity
     total_price = sum(item.total_price for item in cart_items)
-    return render(request, 'cart.html', {'cart_items': cart_items, 'total_price': total_price})
+    cart_count = sum(item.quantity for item in cart_items)
+    return render(request, 'cart.html', {
+        'cart_items': cart_items,
+        'total_price': total_price,
+        'cart_count': cart_count,
+    })
+
 
 @login_required(login_url='register')
 def update_cart_bulk(request):
