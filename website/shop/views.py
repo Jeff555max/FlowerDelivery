@@ -12,10 +12,20 @@ from django.core.exceptions import ValidationError
 def index(request):
     return render(request, "index.html")
 
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
 def catalog(request):
-    """Страница каталога товаров"""
-    products = Product.objects.all()
+    products_list = Product.objects.all()
+    paginator = Paginator(products_list, 9)  # 9 товаров на страницу
+    page = request.GET.get('page')
+    try:
+        products = paginator.page(page)
+    except PageNotAnInteger:
+        products = paginator.page(1)
+    except EmptyPage:
+        products = paginator.page(paginator.num_pages)
     return render(request, "catalog.html", {"products": products})
+
 
 def remove_from_cart(request, product_id):
     """Удаление товара из корзины"""
