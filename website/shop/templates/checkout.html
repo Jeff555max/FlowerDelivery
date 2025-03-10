@@ -3,10 +3,39 @@
 {% block title %}Оформление заказа{% endblock %}
 
 {% block content %}
-<h2>Оформление заказа</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Подтвердить заказ</button>
-</form>
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <h2 class="text-center mb-4">Оформление заказа</h2>
+    <form method="post" class="form-horizontal">
+      {% csrf_token %}
+      <div class="form-group row mb-3">
+        <label for="{{ form.name.id_for_label }}" class="col-sm-4 col-form-label text-end">
+          Имя покупателя:
+        </label>
+        <div class="col-sm-8">
+          {{ form.name }}
+        </div>
+      </div>
+      <div class="form-group row mb-3">
+        <label for="{{ form.phone.id_for_label }}" class="col-sm-4 col-form-label text-end">
+          Телефон:
+        </label>
+        <div class="col-sm-8">
+          {{ form.phone }}
+        </div>
+      </div>
+      <div class="form-group row mb-3">
+        <label for="{{ form.address.id_for_label }}" class="col-sm-4 col-form-label text-end">
+          Адрес доставки:
+        </label>
+        <div class="col-sm-8">
+          {{ form.address }}
+        </div>
+      </div>
+      <div class="text-center mt-3">
+        <button type="submit" class="btn btn-primary">Подтвердить заказ</button>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %}
