@@ -8,11 +8,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 def index(request):
     return render(request, "index.html")
 
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 def catalog(request):
     products_list = Product.objects.all()
