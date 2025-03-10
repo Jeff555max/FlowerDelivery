@@ -1,11 +1,22 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Главная{% endblock %}
 
 {% block content %}
-<div class="jumbotron text-center bg-light p-5">
-    <h1 class="display-4 fw-bold">🌸 Магазин цветов</h1>
-    <p class="lead">Лучшие цветочные композиции для любого случая</p>
+<!-- Герой-блок с фоновым изображением -->
+<div class="position-relative"
+     style="
+       background: url('{% static "images/flower.jpg" %}') no-repeat center center;
+       background-size: cover;
+       height: 400px;
+     ">
+  <!-- Полупрозрачный оверлей -->
+  <div class="position-absolute w-100 h-100 d-flex flex-column justify-content-center align-items-center"
+       style="background-color: rgba(0, 0, 0, 0.3);">
+    <h1 class="display-4 fw-bold text-white">🌸 Магазин цветов</h1>
+    <p class="lead text-white">Лучшие цветочные композиции для любого случая</p>
     <a class="btn btn-primary btn-lg" href="{% url 'catalog' %}">Перейти в каталог</a>
+  </div>
 </div>
 {% endblock %}

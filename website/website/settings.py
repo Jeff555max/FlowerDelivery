@@ -127,14 +127,16 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+
+STATIC_URL = '/static/'
+# Если нужно, можно добавить:
+# STATICFILES_DIRS = [BASE_DIR / 'shop' / 'static']
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# STATICFILES_DIRS = [BASE_DIR / 'static']  Убедитесь, что другие настройки, такие как STATICFILES_DIRS, TEMPLATES, используют правильное объединение путей с помощью pathlib.Path
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
