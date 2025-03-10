@@ -3,59 +3,66 @@
 {% block title %}Корзина{% endblock %}
 
 {% block content %}
-<h1>Корзина</h1>
-{% if cart_items %}
-<form method="post" action="{% url 'update_cart_bulk' %}">
-    {% csrf_token %}
-    <table class="table">
-        <!-- Здесь ваша таблица с товарами -->
+<div class="row justify-content-center">
+  <div class="col-md-10">
+    <!-- Заголовок по центру -->
+    <h1 class="text-center mb-4">Корзина</h1>
+    {% if cart_items %}
+    <form method="post" action="{% url 'update_cart_bulk' %}">
+      {% csrf_token %}
+      <table class="table">
         <thead>
-            <tr>
-                <th>Товар</th>
-                <th>Количество</th>
-                <th>Цена за единицу</th>
-                <th>Общая цена</th>
-                <th></th>
-            </tr>
+          <tr>
+            <th>Товар</th>
+            <th>Количество</th>
+            <th>Цена за единицу</th>
+            <th>Общая цена</th>
+            <th></th>
+          </tr>
         </thead>
         <tbody>
-            {% for item in cart_items %}
-            <tr data-price="{{ item.product.price }}">
-                <td>{{ item.product.name }}</td>
-                <td>
-                    <div class="input-group" style="max-width: 200px;">
-                        <button type="button" class="btn btn-outline-secondary" onclick="decrementQuantity('{{ item.product.id }}')">−</button>
-                        <input type="number" name="quantity_{{ item.product.id }}" id="quantity-{{ item.product.id }}" class="form-control text-center cart-quantity" value="{{ item.quantity }}" min="1" style="max-width: 70px;">
-                        <button type="button" class="btn btn-outline-secondary" onclick="incrementQuantity('{{ item.product.id }}')">+</button>
-                    </div>
-                </td>
-                <td>{{ item.product.price|floatformat:2 }} руб.</td>
-                <td class="item-total">{{ item.total_price|floatformat:2 }} руб.</td>
-                <td>
-                    <a href="{% url 'remove_from_cart' item.product.id %}" class="btn btn-danger btn-sm">Удалить</a>
-                </td>
-            </tr>
-            {% endfor %}
+          {% for item in cart_items %}
+          <tr data-price="{{ item.product.price }}">
+            <td>{{ item.product.name }}</td>
+            <td>
+              <div class="input-group" style="max-width: 200px;">
+                <button type="button" class="btn btn-outline-secondary" onclick="decrementQuantity('{{ item.product.id }}')">−</button>
+                <input type="number" name="quantity_{{ item.product.id }}" id="quantity-{{ item.product.id }}" class="form-control text-center cart-quantity" value="{{ item.quantity }}" min="1" style="max-width: 70px;">
+                <button type="button" class="btn btn-outline-secondary" onclick="incrementQuantity('{{ item.product.id }}')">+</button>
+              </div>
+            </td>
+            <td>{{ item.product.price|floatformat:2 }} руб.</td>
+            <td class="item-total">{{ item.total_price|floatformat:2 }} руб.</td>
+            <td>
+              <a href="{% url 'remove_from_cart' item.product.id %}" class="btn btn-danger btn-sm">Удалить</a>
+            </td>
+          </tr>
+          {% endfor %}
         </tbody>
         <tfoot>
-            <tr>
-                <td colspan="3"><strong>Итого:</strong></td>
-                <td><strong id="cart-total">{{ total_price|floatformat:2 }} руб.</strong></td>
-                <td></td>
-            </tr>
+          <tr>
+            <td colspan="3"><strong>Итого:</strong></td>
+            <td><strong id="cart-total">{{ total_price|floatformat:2 }} руб.</strong></td>
+            <td></td>
+          </tr>
         </tfoot>
-    </table>
-    <button type="submit" class="btn btn-primary">Оформить заказ</button>
-</form>
-{% else %}
-<p>Ваша корзина пуста.</p>
-{% endif %}
+      </table>
+      <!-- Кнопка Оформить заказ по центру -->
+      <div class="text-center">
+        <button type="submit" class="btn btn-primary">Оформить заказ</button>
+      </div>
+    </form>
+    {% else %}
+    <p class="text-center">Ваша корзина пуста.</p>
+    {% endif %}
+  </div>
+</div>
+
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    // При изменении значения в поле пересчитываем сумму
     const quantityInputs = document.querySelectorAll(".cart-quantity");
     quantityInputs.forEach(input => {
         input.addEventListener("input", function() {
@@ -108,11 +115,7 @@ function decrementQuantity(productId) {
     var input = document.getElementById("quantity-" + productId);
     if (input) {
         let current = parseInt(input.value) || 1;
-        if (current > 1) {
-            input.value = current - 1;
-        } else {
-            input.value = 1;
-        }
+        input.value = current > 1 ? current - 1 : 1;
         input.dispatchEvent(new Event('input'));
     }
 }
