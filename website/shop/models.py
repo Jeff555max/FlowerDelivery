@@ -14,6 +14,11 @@ class CustomUser(AbstractUser):
         default='individual',
         verbose_name='Тип пользователя'
     )
+    phone = models.CharField(max_length=20, blank=True, verbose_name="Телефон")
+
+    def __str__(self):
+        return self.username
+
 
 
 class Product(models.Model):
