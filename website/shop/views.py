@@ -13,6 +13,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 def index(request):
     return render(request, "index.html")
 
+
 def catalog(request):
     products_list = Product.objects.all()
     paginator = Paginator(products_list, 9)  # 9 товаров на страницу
@@ -24,6 +25,7 @@ def catalog(request):
     except EmptyPage:
         products = paginator.page(paginator.num_pages)
     return render(request, "catalog.html", {"products": products})
+
 
 def add_to_cart(request, product_id, quantity):
     if not request.session.session_key:
