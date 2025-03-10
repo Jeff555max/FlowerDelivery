@@ -3,22 +3,25 @@
 {% block title %}Личный кабинет{% endblock %}
 
 {% block content %}
-<h2>Добро пожаловать, {{ user.username }}!</h2>
-<h3>Ваши заказы:</h3>
-<ul class="list-group">
-    {% for order in orders %}
-    <li class="list-group-item">
-        Заказ #{{ order.id }} - {{ order.total_price }} руб. ({{ order.get_status_display_rus }})
-    </li>
-    {% empty %}
-    <p>Вы ещё не делали заказов.</p>
-    {% endfor %}
-</ul>
-
-<!-- Кнопка "Вернуться в каталог" -->
-<a href="{% url 'catalog' %}" class="btn btn-primary mt-3">Вернуться в каталог</a>
-
-<!-- Кнопка "Выйти" -->
-<a href="{% url 'logout' %}" class="btn btn-danger mt-3 ml-2">Выйти</a>
-
+<div class="row justify-content-center">
+  <div class="col-md-8 text-center">
+    <h2 class="mb-4">Добро пожаловать, {{ user.username }}!</h2>
+    <h3>Ваши заказы:</h3>
+    {% if orders %}
+      <ul class="list-group text-center">
+        {% for order in orders %}
+          <li class="list-group-item">
+            Заказ #{{ order.id }} - {{ order.total_price|floatformat:2 }} руб. ({{ order.get_status_display_rus }})
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>Вы ещё не делали заказов.</p>
+    {% endif %}
+    <div class="mt-4">
+      <a href="{% url 'catalog' %}" class="btn btn-primary">Вернуться в каталог</a>
+      <a href="{% url 'logout' %}" class="btn btn-danger ms-2">Выйти</a>
+    </div>
+  </div>
+</div>
 {% endblock %}
