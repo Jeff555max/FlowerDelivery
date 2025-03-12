@@ -1,3 +1,11 @@
+try:
+    from bot.config import BOT_TOKEN, BOT_USERNAME  # Конфигурация бота
+except ModuleNotFoundError:
+    BOT_TOKEN = None
+    BOT_USERNAME = None
+
+import requests  # Обязательно установленный пакет requests
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from .models import Product, Cart, Order, CustomUser
@@ -96,6 +104,47 @@ def update_cart_bulk(request):
                     continue
     return redirect("checkout")
 
+def send_order_notification(order, cart_items_list):
+    """
+    Отправка уведомления в Telegram о заказе.
+    Если у пользователя не указан telegram_id или BOT_TOKEN отсутствует, уведомление не отправляется.
+    Отправляется фото (если есть) и текст с информацией о заказе, включая статус.
+    """
+    # Получаем telegram_id из профиля пользователя
+    telegram_id = getattr(order.user, 'telegram_id', None)
+    if not telegram_id or not BOT_TOKEN:
+        return
+    caption = (
+        f"Ваш заказ оформлен!\n"
+        f"Статус: {order.get_status_display_rus()}\n"
+        f"Общая стоимость: {order.total_price} руб."
+    )
+    # Пытаемся взять фото из товаров заказа (первое найденное)
+    photo_url = None
+    for item in cart_items_list:
+        if item.product.image:
+            photo_url = item.product.image.url
+            break
+    if photo_url:
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
+        data = {
+            "chat_id": telegram_id,
+            "caption": caption,
+            "photo": photo_url,
+            "parse_mode": "HTML",
+        }
+        r = requests.post(url, data=data)
+    else:
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        data = {
+            "chat_id": telegram_id,
+            "text": caption,
+            "parse_mode": "HTML",
+        }
+        r = requests.post(url, data=data)
+    # Можно добавить логирование ответа, если потребуется:
+    # print(r.json())
+
 @login_required(login_url='register')
 def checkout(request):
     """
@@ -115,8 +164,11 @@ def checkout(request):
             order.user = request.user  # Заказ привязывается к авторизованному пользователю
             order.name = request.user.username  # Переопределяем поле name
             order.save()
+            # Сохраняем список товаров для уведомления
+            items_list = list(cart_items)
             cart_items.delete()
             messages.success(request, "Заказ успешно оформлен!")
+            send_order_notification(order, items_list)
             return redirect("profile")
     else:
         form = CheckoutForm()
