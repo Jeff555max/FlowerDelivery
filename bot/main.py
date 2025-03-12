@@ -6,21 +6,16 @@ import asyncio
 
 # Определяем путь к корневой папке проекта (FlowerDelivery)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, BASE_DIR)
+# sys.path.insert(0, BASE_DIR)
+sys.path.insert(0, os.path.join(BASE_DIR, "website"))
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "website.settings")
 
-# Устанавливаем переменную окружения для настроек Django.
-# При структуре:
-# FlowerDelivery/
-#   ├─ website/
-#       ├─ manage.py
-#       └─ website/
-#           ├─ __init__.py
-#           ├─ settings.py
-#           └─ ...
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "website.website.settings")
+# os.environ.setdefault("DJANGO_SETTINGS_MODULE", "website.website.settings")
 
 # Инициализируем Django
 django.setup()
+
+from shop.models import CustomUser, Order
 
 import requests
 from aiogram import Bot, Dispatcher, types
@@ -38,7 +33,7 @@ if not BOT_TOKEN or BOT_TOKEN.strip() == "":
     print("⚠️ BOT_TOKEN не найден. Проверьте bot/config.py.")
     exit(1)
 
-from shop.models import CustomUser, Order
+
 
 logging.basicConfig(level=logging.INFO)
 
