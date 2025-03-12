@@ -11,8 +11,9 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-
 import os
+
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 
@@ -146,6 +147,20 @@ LOGIN_REDIRECT_URL = "profile"
 LOGOUT_REDIRECT_URL = "login"
 
 AUTH_USER_MODEL = 'shop.CustomUser'
+
+
+
+try:
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(0, os.path.join(BASE_DIR, '..', 'bot'))
+    from config import BOT_TOKEN, BOT_USERNAME
+    TELEGRAM_BOT_TOKEN = BOT_TOKEN
+    TELEGRAM_BOT_USERNAME = BOT_USERNAME  # Например, "Flower5Shop_Bot" (без @)
+except ImportError as e:
+    print(f"ImportError: {e}")
+    TELEGRAM_BOT_TOKEN = None
+    TELEGRAM_BOT_USERNAME = None
+
 
 
 
