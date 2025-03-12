@@ -25,7 +25,7 @@ from aiogram.types import Message
 
 # Импортируем конфигурацию бота из bot/config.py
 try:
-    from config import BOT_TOKEN, BOT_USERNAME # from bot.config import BOT_TOKEN, BOT_USERNAME
+    from bot.config import BOT_TOKEN, BOT_USERNAME # from config import BOT_TOKEN, BOT_USERNAME
 except ModuleNotFoundError:
     BOT_TOKEN = None
     BOT_USERNAME = None
