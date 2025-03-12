@@ -6,6 +6,14 @@
 <div class="container mt-4">
   <h2 class="text-center mb-2">Личный кабинет</h2>
   <h3 class="text-center mb-4">Добро пожаловать, {{ user.username }}!</h3>
+
+  <!-- Новая кнопка для подключения бота -->
+  <div class="text-center mb-4">
+    <a href="https://t.me/Flower5Shop_Bot" class="btn btn-success btn-lg">
+      Подключить Telegram бота
+    </a>
+  </div>
+
   <h4 class="text-center">Ваши заказы:</h4>
   {% if orders %}
     <ul class="list-group">
