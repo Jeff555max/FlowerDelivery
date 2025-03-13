@@ -4,7 +4,6 @@ import django
 import logging
 import asyncio
 
-
 # Определяем путь к корневой папке проекта (FlowerDelivery)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 # sys.path.insert(0, BASE_DIR)
@@ -16,8 +15,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "website.settings")
 # Инициализируем Django
 django.setup()
 
-from shop.models import CustomUser, Order
-
 import requests
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
@@ -25,7 +22,7 @@ from aiogram.types import Message
 
 # Импортируем конфигурацию бота из bot/config.py
 try:
-    from config import BOT_TOKEN, BOT_USERNAME # from bot.config import BOT_TOKEN, BOT_USERNAME
+    from bot.config import BOT_TOKEN, BOT_USERNAME
 except ModuleNotFoundError:
     BOT_TOKEN = None
     BOT_USERNAME = None
@@ -34,9 +31,10 @@ if not BOT_TOKEN or BOT_TOKEN.strip() == "":
     print("⚠️ BOT_TOKEN не найден. Проверьте bot/config.py.")
     exit(1)
 
-
-
 logging.basicConfig(level=logging.INFO)
+
+# ВАЖНО: не меняем путь к модулю shop
+from shop.models import CustomUser, Order
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()

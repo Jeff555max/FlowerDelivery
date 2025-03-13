@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Личный кабинет{% endblock %}
 
@@ -7,9 +8,9 @@
   <h2 class="text-center mb-2">Личный кабинет</h2>
   <h3 class="text-center mb-4">Добро пожаловать, {{ user.username }}!</h3>
 
-  <!-- Новая кнопка для подключения бота -->
+  <!-- Кнопка подключения Telegram бота -->
   <div class="text-center mb-4">
-    <a href="https://t.me/Flower5Shop_Bot" class="btn btn-success btn-lg">
+    <a href="{{ telegram_bot_url }}" class="btn btn-success">
       Подключить Telegram бота
     </a>
   </div>

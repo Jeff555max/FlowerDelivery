@@ -18,6 +18,13 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
+from django.conf import settings
+
+
+
+from shop.models import Order  # или from website.shop.models, если изменена структура
+
+
 def index(request):
     return render(request, "index.html")
 
@@ -218,7 +225,10 @@ def user_logout(request):
     messages.success(request, "Вы успешно вышли из системы!")
     return redirect("login")
 
+
+
 @login_required
 def profile(request):
     orders = Order.objects.filter(user=request.user)
-    return render(request, "profile.html", {"orders": orders})
+    telegram_bot_url = f"https://t.me/{settings.TELEGRAM_BOT_USERNAME}?start={request.user.id}"
+    return render(request, "profile.html", {"orders": orders, "telegram_bot_url": telegram_bot_url})
