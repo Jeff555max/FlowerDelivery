@@ -1,18 +1,31 @@
-# shop/admin.py
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
 from .models import Product, Order, Cart, CustomUser
 from .views import send_order_notification
-from django.contrib.auth.admin import UserAdmin
 
 class CustomUserAdmin(UserAdmin):
     model = CustomUser
-    list_display = ('username', 'email', 'phone', 'telegram_id', 'is_staff', 'is_active')
-    # и т.д.
+    list_display = ('username', 'email', 'phone', 'telegram_id', 'is_staff', 'is_active', 'date_joined')
+    list_filter = ('user_type', 'is_staff', 'is_active')
+    fieldsets = (
+        (None, {'fields': ('username', 'email', 'password')}),
+        ('Персональная информация', {'fields': ('first_name', 'last_name', 'phone', 'telegram_id', 'user_type')}),
+        ('Разрешения', {'fields': ('is_staff', 'is_active', 'groups', 'user_permissions')}),
+        ('Даты', {'fields': ('last_login', 'date_joined')}),
+    )
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('username', 'email', 'phone', 'telegram_id', 'user_type', 'password1', 'password2', 'is_staff', 'is_active')}
+         ),
+    )
+    search_fields = ('username', 'email')
+    ordering = ('date_joined',)
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('name', 'price', 'created_at')
-    # ...
+    search_fields = ('name',)
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
@@ -32,8 +45,8 @@ class OrderAdmin(admin.ModelAdmin):
 
         super().save_model(request, obj, form, change)
 
+        # Если статус заказа действительно изменился
         if change and old_status and old_status != obj.status:
-            # Статус заказа изменился, отправим уведомление
             send_order_notification(obj, [], event="status_changed")
 
 @admin.register(Cart)

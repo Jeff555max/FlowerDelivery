@@ -17,8 +17,9 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.conf import settings
 
+from django.conf import settings
+# Обратите внимание: Импорт Order повторяется, если хотите, можно удалить:
 from shop.models import Order  # или from website.shop.models, если изменена структура
 
 def index(request):
@@ -84,6 +85,10 @@ def cart(request):
 
 @login_required(login_url='register')
 def update_cart_bulk(request):
+    """
+    Обновление количества товаров через одну форму.
+    Если пользователь не авторизован, перенаправляем на регистрацию.
+    """
     session_key = request.session.session_key
     if not session_key:
         messages.error(request, "Сессия не найдена.")
@@ -109,15 +114,15 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
     Если у пользователя не указан telegram_id или BOT_TOKEN отсутствует, уведомление не отправляется.
 
     :param order: объект Order
-    :param cart_items_list: список объектов Cart (только при event="order_placed")
+    :param cart_items_list: список объектов Cart (для event="order_placed")
     :param event: "order_placed" или "status_changed"
     """
     telegram_id = getattr(order.user, 'telegram_id', None)
     if not telegram_id or not BOT_TOKEN:
         return
 
+    # Формируем сообщение в зависимости от события
     if event == "order_placed":
-        # Сообщение при создании нового заказа
         caption = (
             f"Ваш заказ оформлен!\n"
             f"Статус: {order.get_status_display_rus()}\n"
@@ -130,16 +135,16 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
                 photo_url = item.product.image.url
                 break
     elif event == "status_changed":
-        # Сообщение при изменении статуса заказа в админке
         caption = (
-            f"Статус вашего заказа #{order.id} был изменён!\n"
+            f"Статус вашего заказа #{order.id} изменён!\n"
             f"Новый статус: {order.get_status_display_rus()}\n"
             f"Общая стоимость: {order.total_price} руб."
         )
-        photo_url = None  # при изменении статуса можно фото не отправлять
+        photo_url = None
     else:
         return
 
+    # Отправка уведомления
     if photo_url:
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
         data = {
@@ -148,7 +153,7 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
             "photo": photo_url,
             "parse_mode": "HTML",
         }
-        r = requests.post(url, data=data)
+        requests.post(url, data=data)
     else:
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
         data = {
@@ -156,11 +161,14 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
             "text": caption,
             "parse_mode": "HTML",
         }
-        r = requests.post(url, data=data)
-    # print(r.json())  # для отладки
+        requests.post(url, data=data)
 
 @login_required(login_url='register')
 def checkout(request):
+    """
+    Оформление заказа.
+    Независимо от того, что введено в поле 'name' формы, заказ связывается с request.user.
+    """
     session_key = request.session.session_key
     cart_items = Cart.objects.filter(session_key=session_key)
     if not cart_items:
