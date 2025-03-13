@@ -17,13 +17,9 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-
 from django.conf import settings
 
-
-
 from shop.models import Order  # или from website.shop.models, если изменена структура
-
 
 def index(request):
     return render(request, "index.html")
@@ -88,10 +84,6 @@ def cart(request):
 
 @login_required(login_url='register')
 def update_cart_bulk(request):
-    """
-    Обновление количества товаров через одну форму.
-    Если пользователь не авторизован, перенаправляем на регистрацию.
-    """
     session_key = request.session.session_key
     if not session_key:
         messages.error(request, "Сессия не найдена.")
@@ -111,27 +103,43 @@ def update_cart_bulk(request):
                     continue
     return redirect("checkout")
 
-def send_order_notification(order, cart_items_list):
+def send_order_notification(order, cart_items_list, event="order_placed"):
     """
     Отправка уведомления в Telegram о заказе.
     Если у пользователя не указан telegram_id или BOT_TOKEN отсутствует, уведомление не отправляется.
-    Отправляется фото (если есть) и текст с информацией о заказе, включая статус.
+
+    :param order: объект Order
+    :param cart_items_list: список объектов Cart (только при event="order_placed")
+    :param event: "order_placed" или "status_changed"
     """
-    # Получаем telegram_id из профиля пользователя
     telegram_id = getattr(order.user, 'telegram_id', None)
     if not telegram_id or not BOT_TOKEN:
         return
-    caption = (
-        f"Ваш заказ оформлен!\n"
-        f"Статус: {order.get_status_display_rus()}\n"
-        f"Общая стоимость: {order.total_price} руб."
-    )
-    # Пытаемся взять фото из товаров заказа (первое найденное)
-    photo_url = None
-    for item in cart_items_list:
-        if item.product.image:
-            photo_url = item.product.image.url
-            break
+
+    if event == "order_placed":
+        # Сообщение при создании нового заказа
+        caption = (
+            f"Ваш заказ оформлен!\n"
+            f"Статус: {order.get_status_display_rus()}\n"
+            f"Общая стоимость: {order.total_price} руб."
+        )
+        # Пытаемся взять фото из товаров заказа (первое найденное)
+        photo_url = None
+        for item in cart_items_list:
+            if item.product.image:
+                photo_url = item.product.image.url
+                break
+    elif event == "status_changed":
+        # Сообщение при изменении статуса заказа в админке
+        caption = (
+            f"Статус вашего заказа #{order.id} был изменён!\n"
+            f"Новый статус: {order.get_status_display_rus()}\n"
+            f"Общая стоимость: {order.total_price} руб."
+        )
+        photo_url = None  # при изменении статуса можно фото не отправлять
+    else:
+        return
+
     if photo_url:
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
         data = {
@@ -149,15 +157,10 @@ def send_order_notification(order, cart_items_list):
             "parse_mode": "HTML",
         }
         r = requests.post(url, data=data)
-    # Можно добавить логирование ответа, если потребуется:
-    # print(r.json())
+    # print(r.json())  # для отладки
 
 @login_required(login_url='register')
 def checkout(request):
-    """
-    Оформление заказа.
-    Независимо от того, что введено в поле 'name' формы, заказ связывается с request.user.
-    """
     session_key = request.session.session_key
     cart_items = Cart.objects.filter(session_key=session_key)
     if not cart_items:
@@ -168,14 +171,13 @@ def checkout(request):
         if form.is_valid():
             order = form.save(commit=False)
             order.total_price = sum(item.product.price * item.quantity for item in cart_items)
-            order.user = request.user  # Заказ привязывается к авторизованному пользователю
-            order.name = request.user.username  # Переопределяем поле name
+            order.user = request.user
+            order.name = request.user.username
             order.save()
-            # Сохраняем список товаров для уведомления
             items_list = list(cart_items)
             cart_items.delete()
             messages.success(request, "Заказ успешно оформлен!")
-            send_order_notification(order, items_list)
+            send_order_notification(order, items_list, event="order_placed")
             return redirect("profile")
     else:
         form = CheckoutForm()
@@ -203,7 +205,6 @@ def register(request):
     return render(request, "register.html", {"form": form})
 
 def user_login(request):
-    """Авторизация пользователя"""
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
@@ -218,14 +219,11 @@ def user_login(request):
     return render(request, "login.html", {"form": form})
 
 def user_logout(request):
-    """Выход пользователя"""
     if not request.user.is_authenticated:
         return redirect("login")
     logout(request)
     messages.success(request, "Вы успешно вышли из системы!")
     return redirect("login")
-
-
 
 @login_required
 def profile(request):
