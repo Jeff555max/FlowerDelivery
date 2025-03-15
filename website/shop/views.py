@@ -44,13 +44,21 @@ async def update_user_telegram_id(user_id, tg_id):
 def send_order_notification(order, cart_items_list, event="order_placed"):
     """
     Отправка уведомления в Telegram о заказе.
-    Для event="order_placed" отправляется уведомление с фото (если есть),
+    Для event="order_placed" отправляется уведомление с фото (если доступно),
     для event="status_changed" – отправляется уведомление без фото.
+    Если у пользователя не указан telegram_id или BOT_TOKEN отсутствует, уведомление не отправляется.
     """
     telegram_id = getattr(order.user, 'telegram_id', None)
     if not telegram_id or not BOT_TOKEN:
         logging.warning("Telegram ID или BOT_TOKEN отсутствуют.")
         return
+
+    # Формирование абсолютного URL для фото, если оно не начинается с http:// или https://
+    def get_absolute_url(relative_url):
+        site_url = getattr(settings, "SITE_URL", "")
+        if relative_url.startswith("http"):
+            return relative_url
+        return f"{site_url}{relative_url}"
 
     if event == "order_placed":
         caption = (
@@ -61,7 +69,7 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
         photo_url = None
         for item in cart_items_list:
             if item.product.image:
-                photo_url = item.product.image.url
+                photo_url = get_absolute_url(item.product.image.url)
                 break
     elif event == "status_changed":
         caption = (
@@ -92,6 +100,7 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
         }
         r = requests.post(url, data=data)
         logging.info(f"sendMessage response: {r.json()}")
+
 
 def index(request):
     return render(request, "index.html")
