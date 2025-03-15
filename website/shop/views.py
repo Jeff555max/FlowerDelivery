@@ -49,13 +49,11 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
     Если у пользователя не указан telegram_id или BOT_TOKEN отсутствует, уведомление не отправляется.
     """
     telegram_id = getattr(order.user, 'telegram_id', None)
-    logging.info(
-        f"Попытка отправки уведомления: telegram_id={telegram_id}, BOT_TOKEN={'установлен' if BOT_TOKEN else 'не установлен'}")
     if not telegram_id or not BOT_TOKEN:
         logging.warning("Telegram ID или BOT_TOKEN отсутствуют.")
         return
 
-    # Формирование абсолютного URL для фото, если оно не начинается с http:// или https://
+    # Функция для формирования абсолютного URL изображения
     def get_absolute_url(relative_url):
         site_url = getattr(settings, "SITE_URL", "")
         if relative_url.startswith("http"):
