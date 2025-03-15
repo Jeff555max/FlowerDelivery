@@ -18,6 +18,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.conf import settings
+from django.views.decorators.csrf import csrf_protect
 
 # Если структура не изменилась, импорт из shop.models:
 from shop.models import Order  # можно оставить, если требуется
@@ -294,6 +295,7 @@ def adminpage(request):
 
 
 @login_required
+@csrf_protect
 def update_order_status(request, order_id):
     """
     Представление для изменения статуса заказа администратором.
