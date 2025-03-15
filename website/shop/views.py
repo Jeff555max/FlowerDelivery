@@ -21,8 +21,8 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.conf import settings
 from django.views.decorators.csrf import csrf_protect
 
-# Если структура не изменилась, импорт из shop.models:
-from shop.models import Order  # можно оставить, если требуется
+# Если структура не изменилась, импорт из shop.models (можно оставить)
+from shop.models import Order
 
 # --- Функции для работы с Telegram ID через синхронные вызовы ---
 from django.db import connection
@@ -41,8 +41,57 @@ async def update_user_telegram_id(user_id, tg_id):
         user.save()
     await sync_to_async(_update)()
 
+def send_order_notification(order, cart_items_list, event="order_placed"):
+    """
+    Отправка уведомления в Telegram о заказе.
+    Для event="order_placed" отправляется уведомление с фото (если есть),
+    для event="status_changed" – отправляется уведомление без фото.
+    """
+    telegram_id = getattr(order.user, 'telegram_id', None)
+    if not telegram_id or not BOT_TOKEN:
+        logging.warning("Telegram ID или BOT_TOKEN отсутствуют.")
+        return
 
-# Основные представления
+    if event == "order_placed":
+        caption = (
+            f"Ваш заказ оформлен!\n"
+            f"Статус: {order.get_status_display_rus()}\n"
+            f"Общая стоимость: {order.total_price} руб."
+        )
+        photo_url = None
+        for item in cart_items_list:
+            if item.product.image:
+                photo_url = item.product.image.url
+                break
+    elif event == "status_changed":
+        caption = (
+            f"Статус вашего заказа #{order.id} изменён!\n"
+            f"Новый статус: {order.get_status_display_rus()}\n"
+            f"Общая стоимость: {order.total_price} руб."
+        )
+        photo_url = None
+    else:
+        return
+
+    if photo_url:
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
+        data = {
+            "chat_id": telegram_id,
+            "caption": caption,
+            "photo": photo_url,
+            "parse_mode": "HTML",
+        }
+        r = requests.post(url, data=data)
+        logging.info(f"sendPhoto response: {r.json()}")
+    else:
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        data = {
+            "chat_id": telegram_id,
+            "text": caption,
+            "parse_mode": "HTML",
+        }
+        r = requests.post(url, data=data)
+        logging.info(f"sendMessage response: {r.json()}")
 
 def index(request):
     return render(request, "index.html")
@@ -129,59 +178,6 @@ def update_cart_bulk(request):
                 except ValueError:
                     continue
     return redirect("checkout")
-
-def send_order_notification(order, cart_items_list, event="order_placed"):
-    """
-    Отправка уведомления в Telegram о заказе.
-    Если у пользователя не указан telegram_id или BOT_TOKEN отсутствует, уведомление не отправляется.
-    Для event="order_placed" отправляется уведомление с фото (если есть),
-    для event="status_changed" – без фото.
-    """
-    telegram_id = getattr(order.user, 'telegram_id', None)
-    if not telegram_id or not BOT_TOKEN:
-        logging.warning("Telegram ID или BOT_TOKEN отсутствуют.")
-        return
-
-    if event == "order_placed":
-        caption = (
-            f"Ваш заказ оформлен!\n"
-            f"Статус: {order.get_status_display_rus()}\n"
-            f"Общая стоимость: {order.total_price} руб."
-        )
-        photo_url = None
-        for item in cart_items_list:
-            if item.product.image:
-                photo_url = item.product.image.url
-                break
-    elif event == "status_changed":
-        caption = (
-            f"Статус вашего заказа #{order.id} изменён!\n"
-            f"Новый статус: {order.get_status_display_rus()}\n"
-            f"Общая стоимость: {order.total_price} руб."
-        )
-        photo_url = None
-    else:
-        return
-
-    if photo_url:
-        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
-        data = {
-            "chat_id": telegram_id,
-            "caption": caption,
-            "photo": photo_url,
-            "parse_mode": "HTML",
-        }
-        r = requests.post(url, data=data)
-        logging.info(f"sendPhoto response: {r.json()}")
-    else:
-        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-        data = {
-            "chat_id": telegram_id,
-            "text": caption,
-            "parse_mode": "HTML",
-        }
-        r = requests.post(url, data=data)
-        logging.info(f"sendMessage response: {r.json()}")
 
 @login_required(login_url='register')
 def checkout(request):
