@@ -21,6 +21,11 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.conf import settings
 from django.views.decorators.csrf import csrf_protect
 
+import os
+
+
+
+
 # Если структура не изменилась, импорт из shop.models (можно оставить)
 from shop.models import Order
 
@@ -41,26 +46,41 @@ async def update_user_telegram_id(user_id, tg_id):
         user.save()
     await sync_to_async(_update)()
 
+# Если вы тестируете отправку фотографий на локальном сервере (http://127.0.0.1:8000) без публичного домена, Telegram-сервер не сможет напрямую обратиться к вашему localhost, чтобы скачать изображение по URL. Поэтому ссылка вида http://127.0.0.1:8000/media/... будет для Telegram недоступна.
+#
+# Есть два пути решения:
+#
+# Использовать публично доступный адрес (через домен или туннель, например ngrok), чтобы Telegram мог увидеть ваши изображения по URL.
+# Отправлять фото как локальный файл, минуя URL. Тогда Telegram не будет скачивать изображение по ссылке, а получит его напрямую из вашего кода.
+# Ниже приведён пример кода, где мы, если нужно, отправляем фото файлом через files параметр, а не по URL. Таким образом Telegram получит файл напрямую из вашего локального MEDIA_ROOT. Это работает даже на localhost, так как отправка идёт непосредственно из вашего кода.
+
+# Как это работает
+# Проверяем в cart_items_list, есть ли у товара поле image и заполняем local_image_path = item.product.image.path.
+# Если файл существует, открываем его как бинарный и отправляем через параметр files={"photo": ...}. Тогда Telegram не пытается скачивать картинку с URL, а получает её напрямую.
+# Если фото нет, или оно не найдено на диске, отправляем обычный текст.
+# Важные нюансы
+# Поле image в модели:
+# Убедитесь, что в модели Product вы используете, например, models.ImageField(...), и что при загрузке в админке (или другом месте) файл действительно сохраняется в MEDIA_ROOT.
+# item.product.image.path:
+# Django‑поле ImageField даёт вам image.url (для HTML‑ссылок) и image.path (абсолютный путь на диске). Нам нужен именно image.path, чтобы открыть файл.
+# Проверка существования файла:
+# Если файла на диске нет (например, запись в базе есть, а самого файла нет), os.path.exists(local_image_path) вернёт False, и мы отправим обычное сообщение без фото.
+# Работа на localhost:
+# При таком подходе Telegram получает файл напрямую от вашего кода, поэтому не нужно иметь публичный адрес. Отправка фото работает и на локальном окружении.
+# С этим подходом фотографии товаров будут отправляться в боте даже при локальной разработке. Если вы захотите использовать URL (чтобы Telegram скачивал файл), придётся предоставить Telegram публичный доступ к вашему серверу (через домен или ngrok), иначе Telegram не сможет обратиться к http://127.0.0.1:8000.
+
 def send_order_notification(order, cart_items_list, event="order_placed"):
     """
     Отправка уведомления в Telegram о заказе.
-    Для event="order_placed" отправляется уведомление с фото (если доступно),
-    для event="status_changed" – отправляется уведомление без фото.
-    Если у пользователя не указан telegram_id или отсутствует BOT_TOKEN (или TELEGRAM_BOT_TOKEN), уведомление не отправляется.
+    Если у пользователя не указан telegram_id или BOT_TOKEN отсутствует, уведомление не отправляется.
+    При event="order_placed" пытаемся отправить первое найденное изображение как файл.
+    При event="status_changed" отправляем сообщение без фото.
     """
-    # Используем BOT_TOKEN, если он установлен, иначе пытаемся взять из настроек
-    bot_token = BOT_TOKEN or getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
+    bot_token = getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
     telegram_id = getattr(order.user, 'telegram_id', None)
     if not telegram_id or not bot_token:
         logging.warning("Telegram ID или BOT_TOKEN отсутствуют.")
         return
-
-    # Функция для формирования абсолютного URL изображения
-    def get_absolute_url(relative_url):
-        site_url = getattr(settings, "SITE_URL", "")
-        if relative_url.startswith("http"):
-            return relative_url
-        return f"{site_url}{relative_url}"
 
     if event == "order_placed":
         caption = (
@@ -68,10 +88,11 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
             f"Статус: {order.get_status_display_rus()}\n"
             f"Общая стоимость: {order.total_price} руб."
         )
-        photo_url = None
+        local_image_path = None
         for item in cart_items_list:
             if item.product.image:
-                photo_url = get_absolute_url(item.product.image.url)
+                # Абсолютный путь к файлу на диске
+                local_image_path = item.product.image.path
                 break
     elif event == "status_changed":
         caption = (
@@ -79,21 +100,24 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
             f"Новый статус: {order.get_status_display_rus()}\n"
             f"Общая стоимость: {order.total_price} руб."
         )
-        photo_url = None
+        local_image_path = None
     else:
         return
 
-    if photo_url:
+    # Если есть локальный путь к файлу, отправляем его как фото
+    if local_image_path and os.path.exists(local_image_path):
         url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
         data = {
             "chat_id": telegram_id,
             "caption": caption,
-            "photo": photo_url,
             "parse_mode": "HTML",
         }
-        r = requests.post(url, data=data)
-        logging.info(f"sendPhoto response: {r.json()}")
+        with open(local_image_path, 'rb') as f:
+            files = {"photo": f}
+            r = requests.post(url, data=data, files=files)
+        logging.info(f"sendPhoto (file) response: {r.json()}")
     else:
+        # Отправляем обычное сообщение без фото
         url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
         data = {
             "chat_id": telegram_id,
