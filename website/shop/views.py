@@ -17,13 +17,37 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-
 from django.conf import settings
-# Обратите внимание: Импорт Order повторяется, если хотите, можно удалить:
-from shop.models import Order  # или from website.shop.models, если изменена структура
+
+# Если структура не изменилась, импорт из shop.models:
+from shop.models import Order  # можно оставить, если требуется
+
+# --- Функции для работы с Telegram ID через синхронные вызовы ---
+from django.db import connection
+from asgiref.sync import sync_to_async
+
+
+def safe_int(s):
+    try:
+        return int(s)
+    except (ValueError, TypeError):
+        return None
+
+
+async def update_user_telegram_id(user_id, tg_id):
+    def _update():
+        user = CustomUser.objects.get(pk=user_id)
+        user.telegram_id = str(tg_id)
+        user.save()
+
+    await sync_to_async(_update)()
+
+
+# Основные представления
 
 def index(request):
     return render(request, "index.html")
+
 
 def catalog(request):
     products_list = Product.objects.all()
@@ -36,6 +60,7 @@ def catalog(request):
     except EmptyPage:
         products = paginator.page(paginator.num_pages)
     return render(request, "catalog.html", {"products": products})
+
 
 def add_to_cart(request, product_id, quantity):
     if not request.session.session_key:
@@ -62,6 +87,7 @@ def add_to_cart(request, product_id, quantity):
         "cart_count": cart_count
     })
 
+
 def remove_from_cart(request, product_id):
     session_key = request.session.session_key
     if not session_key:
@@ -69,6 +95,7 @@ def remove_from_cart(request, product_id):
     cart_item = get_object_or_404(Cart, session_key=session_key, product_id=product_id)
     cart_item.delete()
     return redirect("cart")
+
 
 def cart(request):
     session_key = request.session.session_key
@@ -82,6 +109,7 @@ def cart(request):
         'total_price': total_price,
         'cart_count': cart_count,
     })
+
 
 @login_required(login_url='register')
 def update_cart_bulk(request):
@@ -108,27 +136,26 @@ def update_cart_bulk(request):
                     continue
     return redirect("checkout")
 
+
 def send_order_notification(order, cart_items_list, event="order_placed"):
     """
     Отправка уведомления в Telegram о заказе.
     Если у пользователя не указан telegram_id или BOT_TOKEN отсутствует, уведомление не отправляется.
+    Отправляется фото (если есть) и текст с информацией о заказе, включая статус.
 
-    :param order: объект Order
-    :param cart_items_list: список объектов Cart (для event="order_placed")
-    :param event: "order_placed" или "status_changed"
+    event="order_placed" для оформления заказа,
+    event="status_changed" для изменения статуса в админке.
     """
     telegram_id = getattr(order.user, 'telegram_id', None)
     if not telegram_id or not BOT_TOKEN:
         return
 
-    # Формируем сообщение в зависимости от события
     if event == "order_placed":
         caption = (
             f"Ваш заказ оформлен!\n"
             f"Статус: {order.get_status_display_rus()}\n"
             f"Общая стоимость: {order.total_price} руб."
         )
-        # Пытаемся взять фото из товаров заказа (первое найденное)
         photo_url = None
         for item in cart_items_list:
             if item.product.image:
@@ -144,7 +171,6 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
     else:
         return
 
-    # Отправка уведомления
     if photo_url:
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
         data = {
@@ -163,6 +189,7 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
         }
         requests.post(url, data=data)
 
+
 @login_required(login_url='register')
 def checkout(request):
     """
@@ -179,8 +206,8 @@ def checkout(request):
         if form.is_valid():
             order = form.save(commit=False)
             order.total_price = sum(item.product.price * item.quantity for item in cart_items)
-            order.user = request.user
-            order.name = request.user.username
+            order.user = request.user  # Заказ привязывается к авторизованному пользователю
+            order.name = request.user.username  # Переопределяем поле name
             order.save()
             items_list = list(cart_items)
             cart_items.delete()
@@ -190,6 +217,7 @@ def checkout(request):
     else:
         form = CheckoutForm()
     return render(request, "checkout.html", {"form": form, "cart_items": cart_items})
+
 
 def register(request):
     if request.method == "POST":
@@ -212,13 +240,20 @@ def register(request):
         form = CustomUserCreationForm()
     return render(request, "register.html", {"form": form})
 
+
 def user_login(request):
+    """Авторизация пользователя.
+       Если пользователь с username 'admin' входит, перенаправляем на adminpage.
+       Остальные пользователи направляются в профиль.
+    """
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
             login(request, user)
             messages.success(request, "Вы успешно вошли в систему!")
+            if user.username == "admin":
+                return redirect("adminpage")
             return redirect("profile")
         else:
             messages.error(request, "Неверное имя пользователя или пароль.")
@@ -226,15 +261,59 @@ def user_login(request):
         form = AuthenticationForm()
     return render(request, "login.html", {"form": form})
 
+
 def user_logout(request):
+    """Выход пользователя"""
     if not request.user.is_authenticated:
         return redirect("login")
     logout(request)
     messages.success(request, "Вы успешно вышли из системы!")
     return redirect("login")
 
+
 @login_required
 def profile(request):
     orders = Order.objects.filter(user=request.user)
     telegram_bot_url = f"https://t.me/{settings.TELEGRAM_BOT_USERNAME}?start={request.user.id}"
     return render(request, "profile.html", {"orders": orders, "telegram_bot_url": telegram_bot_url})
+
+
+# --- Новые представления для аккаунта администратора ---
+
+@login_required
+def adminpage(request):
+    """
+    Страница аккаунта администратора для управления заказами.
+    Доступна только пользователю с username 'admin'.
+    """
+    if request.user.username != "admin":
+        messages.error(request, "Доступ запрещён.")
+        return redirect("profile")
+    orders = Order.objects.all().order_by("-created_at")
+    return render(request, "adminpage.html", {"orders": orders})
+
+
+@login_required
+def update_order_status(request, order_id):
+    """
+    Представление для изменения статуса заказа администратором.
+    Доступно только пользователю с username 'admin'.
+    При изменении статуса отправляется уведомление в Telegram.
+    """
+    if request.user.username != "admin":
+        messages.error(request, "Доступ запрещён.")
+        return redirect("profile")
+    order = get_object_or_404(Order, id=order_id)
+    if request.method == "POST":
+        new_status = request.POST.get("status")
+        if new_status and new_status in dict(Order.STATUS_CHOICES).keys():
+            if new_status != order.status:
+                order.status = new_status
+                order.save()
+                send_order_notification(order, [], event="status_changed")
+                messages.success(request, f"Статус заказа #{order.id} обновлён.")
+            else:
+                messages.info(request, "Новый статус совпадает со старым.")
+        else:
+            messages.error(request, "Неверный статус.")
+    return redirect("adminpage")

@@ -17,6 +17,9 @@ urlpatterns = [
     path('login/', views.user_login, name='login'),
     path('logout/', views.user_logout, name='logout'),
     path('profile/', views.profile, name='profile'),
+    path('adminpage/', views.adminpage, name='adminpage'),
+    path('update_order_status/<int:order_id>/', views.update_order_status, name='update_order_status'),
+
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
