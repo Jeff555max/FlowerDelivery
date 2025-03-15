@@ -5,6 +5,7 @@ except ModuleNotFoundError:
     BOT_USERNAME = None
 
 import requests  # Обязательно установленный пакет requests
+import logging
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
@@ -19,7 +20,6 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.conf import settings
 from django.views.decorators.csrf import csrf_protect
-import logging
 
 # Если структура не изменилась, импорт из shop.models:
 from shop.models import Order  # можно оставить, если требуется
@@ -28,20 +28,17 @@ from shop.models import Order  # можно оставить, если треб�
 from django.db import connection
 from asgiref.sync import sync_to_async
 
-
 def safe_int(s):
     try:
         return int(s)
     except (ValueError, TypeError):
         return None
 
-
 async def update_user_telegram_id(user_id, tg_id):
     def _update():
         user = CustomUser.objects.get(pk=user_id)
         user.telegram_id = str(tg_id)
         user.save()
-
     await sync_to_async(_update)()
 
 
@@ -49,7 +46,6 @@ async def update_user_telegram_id(user_id, tg_id):
 
 def index(request):
     return render(request, "index.html")
-
 
 def catalog(request):
     products_list = Product.objects.all()
@@ -62,7 +58,6 @@ def catalog(request):
     except EmptyPage:
         products = paginator.page(paginator.num_pages)
     return render(request, "catalog.html", {"products": products})
-
 
 def add_to_cart(request, product_id, quantity):
     if not request.session.session_key:
@@ -89,7 +84,6 @@ def add_to_cart(request, product_id, quantity):
         "cart_count": cart_count
     })
 
-
 def remove_from_cart(request, product_id):
     session_key = request.session.session_key
     if not session_key:
@@ -97,7 +91,6 @@ def remove_from_cart(request, product_id):
     cart_item = get_object_or_404(Cart, session_key=session_key, product_id=product_id)
     cart_item.delete()
     return redirect("cart")
-
 
 def cart(request):
     session_key = request.session.session_key
@@ -111,7 +104,6 @@ def cart(request):
         'total_price': total_price,
         'cart_count': cart_count,
     })
-
 
 @login_required(login_url='register')
 def update_cart_bulk(request):
@@ -137,9 +129,6 @@ def update_cart_bulk(request):
                 except ValueError:
                     continue
     return redirect("checkout")
-
-
-
 
 def send_order_notification(order, cart_items_list, event="order_placed"):
     """
@@ -194,8 +183,6 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
         r = requests.post(url, data=data)
         logging.info(f"sendMessage response: {r.json()}")
 
-
-
 @login_required(login_url='register')
 def checkout(request):
     """
@@ -225,7 +212,6 @@ def checkout(request):
         form = CheckoutForm()
     return render(request, "checkout.html", {"form": form, "cart_items": cart_items})
 
-
 def register(request):
     if request.method == "POST":
         form = CustomUserCreationForm(request.POST)
@@ -247,11 +233,11 @@ def register(request):
         form = CustomUserCreationForm()
     return render(request, "register.html", {"form": form})
 
-
 def user_login(request):
-    """Авторизация пользователя.
-       Если пользователь с username 'admin' входит, перенаправляем на adminpage.
-       Остальные пользователи направляются в профиль.
+    """
+    Авторизация пользователя.
+    Если пользователь с username 'admin' входит, перенаправляем на adminpage.
+    Остальные пользователи направляются в профиль.
     """
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
@@ -268,7 +254,6 @@ def user_login(request):
         form = AuthenticationForm()
     return render(request, "login.html", {"form": form})
 
-
 def user_logout(request):
     """Выход пользователя"""
     if not request.user.is_authenticated:
@@ -277,13 +262,11 @@ def user_logout(request):
     messages.success(request, "Вы успешно вышли из системы!")
     return redirect("login")
 
-
 @login_required
 def profile(request):
     orders = Order.objects.filter(user=request.user)
     telegram_bot_url = f"https://t.me/{settings.TELEGRAM_BOT_USERNAME}?start={request.user.id}"
     return render(request, "profile.html", {"orders": orders, "telegram_bot_url": telegram_bot_url})
-
 
 # --- Новые представления для аккаунта администратора ---
 
@@ -298,7 +281,6 @@ def adminpage(request):
         return redirect("profile")
     orders = Order.objects.all().order_by("-created_at")
     return render(request, "adminpage.html", {"orders": orders})
-
 
 @login_required
 @csrf_protect

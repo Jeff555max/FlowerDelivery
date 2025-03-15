@@ -16,8 +16,8 @@ class CustomUserAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'email', 'phone', 'telegram_id', 'user_type', 'password1', 'password2', 'is_staff', 'is_active')}
-         ),
+            'fields': ('username', 'email', 'phone', 'telegram_id', 'user_type', 'password1', 'password2', 'is_staff', 'is_active')
+        }),
     )
     search_fields = ('username', 'email')
     ordering = ('date_joined',)
@@ -46,9 +46,7 @@ class OrderAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
         if change and old_status and old_status != obj.status:
-            # При изменении статуса вызываем уведомление
             send_order_notification(obj, [], event="status_changed")
-
 
 @admin.register(Cart)
 class CartAdmin(admin.ModelAdmin):
