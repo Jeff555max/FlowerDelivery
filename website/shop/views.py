@@ -19,6 +19,7 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.conf import settings
 from django.views.decorators.csrf import csrf_protect
+import logging
 
 # Если структура не изменилась, импорт из shop.models:
 from shop.models import Order  # можно оставить, если требуется
@@ -138,17 +139,18 @@ def update_cart_bulk(request):
     return redirect("checkout")
 
 
+
+
 def send_order_notification(order, cart_items_list, event="order_placed"):
     """
     Отправка уведомления в Telegram о заказе.
     Если у пользователя не указан telegram_id или BOT_TOKEN отсутствует, уведомление не отправляется.
-    Отправляется фото (если есть) и текст с информацией о заказе, включая статус.
-
-    event="order_placed" для оформления заказа,
-    event="status_changed" для изменения статуса в админке.
+    Для event="order_placed" отправляется уведомление с фото (если есть),
+    для event="status_changed" – без фото.
     """
     telegram_id = getattr(order.user, 'telegram_id', None)
     if not telegram_id or not BOT_TOKEN:
+        logging.warning("Telegram ID или BOT_TOKEN отсутствуют.")
         return
 
     if event == "order_placed":
@@ -180,7 +182,8 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
             "photo": photo_url,
             "parse_mode": "HTML",
         }
-        requests.post(url, data=data)
+        r = requests.post(url, data=data)
+        logging.info(f"sendPhoto response: {r.json()}")
     else:
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
         data = {
@@ -188,7 +191,9 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
             "text": caption,
             "parse_mode": "HTML",
         }
-        requests.post(url, data=data)
+        r = requests.post(url, data=data)
+        logging.info(f"sendMessage response: {r.json()}")
+
 
 
 @login_required(login_url='register')
@@ -196,6 +201,7 @@ def checkout(request):
     """
     Оформление заказа.
     Независимо от того, что введено в поле 'name' формы, заказ связывается с request.user.
+    После оформления заказа вызывается send_order_notification с event="order_placed".
     """
     session_key = request.session.session_key
     cart_items = Cart.objects.filter(session_key=session_key)
@@ -207,8 +213,8 @@ def checkout(request):
         if form.is_valid():
             order = form.save(commit=False)
             order.total_price = sum(item.product.price * item.quantity for item in cart_items)
-            order.user = request.user  # Заказ привязывается к авторизованному пользователю
-            order.name = request.user.username  # Переопределяем поле name
+            order.user = request.user
+            order.name = request.user.username
             order.save()
             items_list = list(cart_items)
             cart_items.delete()

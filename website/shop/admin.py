@@ -45,9 +45,10 @@ class OrderAdmin(admin.ModelAdmin):
 
         super().save_model(request, obj, form, change)
 
-        # Если статус заказа действительно изменился
         if change and old_status and old_status != obj.status:
+            # При изменении статуса вызываем уведомление
             send_order_notification(obj, [], event="status_changed")
+
 
 @admin.register(Cart)
 class CartAdmin(admin.ModelAdmin):
