@@ -17,7 +17,7 @@ django.setup()
 import requests
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command, CommandStart
-from aiogram.types import Message
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from django.conf import settings
 
 # Импортируем конфигурацию бота из bot/config.py
@@ -50,16 +50,16 @@ async def update_user_telegram_id(user_id, tg_id):
     await sync_to_async(_update)()
 
 bot = Bot(token=BOT_TOKEN)
-dp = Dispatcher()
+dp = Dispatcher()  # Создаем диспетчер без передачи бота
 
 @dp.message(CommandStart())
 async def start_handler(message: Message, command: CommandStart):
     """
     Обработчик команды /start.
-    Если команда приходит с аргументом (например, /start 12), то этот аргумент — ID пользователя.
+    Если команда приходит с аргументом (например, /start 12), то этот аргумент – ID пользователя.
     Сохраняем Telegram ID (message.from_user.id) для пользователя с данным ID.
     """
-    args = command.args
+    args = command.args  # Аргументы доступны через command.args
     if args:
         user_id = safe_int(args)
         if user_id:
@@ -71,9 +71,14 @@ async def start_handler(message: Message, command: CommandStart):
         else:
             await message.reply("Некорректный формат ID. Используйте ссылку из личного кабинета.")
     else:
+        kb = ReplyKeyboardMarkup(
+            keyboard=[[KeyboardButton(text="Старт"), KeyboardButton(text="Статус заказа")]],
+            resize_keyboard=True,
+            one_time_keyboard=False
+        )
         await message.reply(
-            "Привет! Я бот магазина цветов.\n"
-            "Используйте /help для получения списка команд."
+            "Привет! Я бот магазина цветов.\nИспользуйте /help для получения списка команд.",
+            reply_markup=kb
         )
 
 @dp.message(Command("help"))
@@ -109,6 +114,16 @@ async def order_status_handler(message: Message):
         await message.reply(response)
     else:
         await message.reply("У вас нет активных заказов.")
+
+# Обработчик кнопки "Старт": теперь выводим список доступных команд (то же, что команда /help)
+@dp.message(lambda message: message.text == "Старт")
+async def handle_start_button(message: Message):
+    await help_handler(message)
+
+# Обработчик кнопки "Статус заказа"
+@dp.message(lambda message: message.text == "Статус заказа")
+async def handle_orderstatus_button(message: Message):
+    await order_status_handler(message)
 
 async def main():
     await dp.start_polling(bot, skip_updates=True)
