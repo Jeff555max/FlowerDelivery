@@ -46,10 +46,12 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
     Отправка уведомления в Telegram о заказе.
     Для event="order_placed" отправляется уведомление с фото (если доступно),
     для event="status_changed" – отправляется уведомление без фото.
-    Если у пользователя не указан telegram_id или BOT_TOKEN отсутствует, уведомление не отправляется.
+    Если у пользователя не указан telegram_id или отсутствует BOT_TOKEN (или TELEGRAM_BOT_TOKEN), уведомление не отправляется.
     """
+    # Используем BOT_TOKEN, если он установлен, иначе пытаемся взять из настроек
+    bot_token = BOT_TOKEN or getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
     telegram_id = getattr(order.user, 'telegram_id', None)
-    if not telegram_id or not BOT_TOKEN:
+    if not telegram_id or not bot_token:
         logging.warning("Telegram ID или BOT_TOKEN отсутствуют.")
         return
 
@@ -82,7 +84,7 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
         return
 
     if photo_url:
-        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
+        url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
         data = {
             "chat_id": telegram_id,
             "caption": caption,
@@ -92,7 +94,7 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
         r = requests.post(url, data=data)
         logging.info(f"sendPhoto response: {r.json()}")
     else:
-        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
         data = {
             "chat_id": telegram_id,
             "text": caption,
