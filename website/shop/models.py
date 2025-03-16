@@ -78,3 +78,20 @@ class Cart(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"
+
+
+# В файле shop/models.py
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items', verbose_name="Заказ")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Товар")
+    quantity = models.PositiveIntegerField(default=1, verbose_name="Количество")
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Цена за единицу")
+
+    def total_price(self):
+        return self.price * self.quantity
+    total_price = property(total_price)
+
+    class Meta:
+        verbose_name = "Позиция заказа"
+        verbose_name_plural = "Позиции заказа"
+

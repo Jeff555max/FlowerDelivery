@@ -24,7 +24,6 @@
   <!-- Основной контент страницы -->
   <div class="container mt-4">
     <h2 class="text-center mb-4">Управление заказами</h2>
-
     {% if orders %}
       <table class="table table-bordered table-striped text-center">
         <thead>
@@ -36,6 +35,7 @@
             <th>Общая стоимость</th>
             <th>Статус</th>
             <th>Дата заказа</th>
+            <th>Позиции заказа</th>
             <th>Изменить статус</th>
           </tr>
         </thead>
@@ -49,6 +49,32 @@
             <td>{{ order.total_price|floatformat:2 }} руб.</td>
             <td><strong>{{ order.get_status_display_rus }}</strong></td>
             <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
+            <td>
+              {% if order.items.all %}
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>Товар</th>
+                      <th>Кол-во</th>
+                      <th>Цена</th>
+                      <th>Сумма</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item in order.items.all %}
+                    <tr>
+                      <td>{{ item.product.name }}</td>
+                      <td>{{ item.quantity }}</td>
+                      <td>{{ item.price|floatformat:2 }} руб.</td>
+                      <td>{{ item.total_price|floatformat:2 }} руб.</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              {% else %}
+                Нет данных
+              {% endif %}
+            </td>
             <td>
               <form action="{% url 'update_order_status' order.id %}" method="post" class="d-inline-block">
                 {% csrf_token %}

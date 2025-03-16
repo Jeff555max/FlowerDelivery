@@ -13,6 +13,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.conf import settings
 from django.views.decorators.csrf import csrf_protect
 import os
+from .models import OrderItem  # Импортируем новую модель OrderItem
 
 # Если структура не изменилась, импорт из shop.models (можно оставить)
 from shop.models import Order
@@ -66,6 +67,11 @@ async def update_user_telegram_id(user_id, tg_id):
 # Работа на localhost:
 # При таком подходе Telegram получает файл напрямую от вашего кода, поэтому не нужно иметь публичный адрес. Отправка фото работает и на локальном окружении.
 # С этим подходом фотографии товаров будут отправляться в боте даже при локальной разработке. Если вы захотите использовать URL (чтобы Telegram скачивал файл), придётся предоставить Telegram публичный доступ к вашему серверу (через домен или ngrok), иначе Telegram не сможет обратиться к http://127.0.0.1:8000.
+
+import os
+import requests
+import logging
+from django.conf import settings
 
 def send_order_notification(order, cart_items_list, event="order_placed"):
     """
@@ -212,13 +218,10 @@ def update_cart_bulk(request):
                     continue
     return redirect("checkout")
 
+
+
 @login_required(login_url='register')
 def checkout(request):
-    """
-    Оформление заказа.
-    Независимо от того, что введено в поле 'name' формы, заказ связывается с request.user.
-    После оформления заказа вызывается send_order_notification с event="order_placed".
-    """
     session_key = request.session.session_key
     cart_items = Cart.objects.filter(session_key=session_key)
     if not cart_items:
@@ -232,14 +235,23 @@ def checkout(request):
             order.user = request.user
             order.name = request.user.username
             order.save()
-            items_list = list(cart_items)
+            # Создаем записи позиций заказа
+            for cart_item in cart_items:
+                OrderItem.objects.create(
+                    order=order,
+                    product=cart_item.product,
+                    quantity=cart_item.quantity,
+                    price=cart_item.product.price
+                )
             cart_items.delete()
             messages.success(request, "Заказ успешно оформлен!")
-            send_order_notification(order, items_list, event="order_placed")
+            send_order_notification(order, list(cart_items), event="order_placed")
             return redirect("profile")
     else:
         form = CheckoutForm()
     return render(request, "checkout.html", {"form": form, "cart_items": cart_items})
+
+
 
 def register(request):
     if request.method == "POST":
