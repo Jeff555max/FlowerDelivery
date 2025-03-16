@@ -61,6 +61,8 @@ FlowerDelivery/
 │       └── templates/
 │           └── shop/
 │               ├── base.html        # Базовый шаблон (общая структура)
+│               ├── footer.html      # Подвал сайта
+│               ├── navbar.html      # Навигационное меню
 │               ├── index.html       # Главная страница
 │               ├── catalog.html     # Страница каталога товаров
 │               ├── cart.html        # Страница корзины
