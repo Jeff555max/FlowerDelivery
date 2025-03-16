@@ -80,7 +80,8 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
     При event="order_placed" пытаемся отправить первое найденное изображение как файл.
     При event="status_changed" отправляем сообщение без фото.
     """
-    bot_token = getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
+    # Используем BOT_TOKEN, если он установлен, иначе пытаемся взять из настроек
+    bot_token = BOT_TOKEN or getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
     telegram_id = getattr(order.user, 'telegram_id', None)
     if not telegram_id or not bot_token:
         logging.warning("Telegram ID или BOT_TOKEN отсутствуют.")
@@ -95,8 +96,11 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
         local_image_path = None
         for item in cart_items_list:
             if item.product.image:
-                # Абсолютный путь к файлу на диске
-                local_image_path = item.product.image.path
+                try:
+                    # Получаем абсолютный путь к файлу на диске
+                    local_image_path = item.product.image.path
+                except Exception as e:
+                    logging.error(f"Ошибка получения пути изображения: {e}")
                 break
     elif event == "status_changed":
         caption = (
@@ -108,28 +112,32 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
     else:
         return
 
-    # Если есть локальный путь к файлу, отправляем его как фото
-    if local_image_path and os.path.exists(local_image_path):
-        url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
-        data = {
-            "chat_id": telegram_id,
-            "caption": caption,
-            "parse_mode": "HTML",
-        }
-        with open(local_image_path, 'rb') as f:
-            files = {"photo": f}
-            r = requests.post(url, data=data, files=files)
-        logging.info(f"sendPhoto (file) response: {r.json()}")
-    else:
-        # Отправляем обычное сообщение без фото
-        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-        data = {
-            "chat_id": telegram_id,
-            "text": caption,
-            "parse_mode": "HTML",
-        }
-        r = requests.post(url, data=data)
-        logging.info(f"sendMessage response: {r.json()}")
+    # Если указан локальный путь, пытаемся отправить файл
+    if local_image_path:
+        try:
+            with open(local_image_path, 'rb') as f:
+                url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
+                data = {
+                    "chat_id": telegram_id,
+                    "caption": caption,
+                    "parse_mode": "HTML",
+                }
+                files = {"photo": f}
+                r = requests.post(url, data=data, files=files)
+            logging.info(f"sendPhoto (file) response: {r.json()}")
+            return
+        except Exception as e:
+            logging.error(f"Ошибка при отправке фото: {e}")
+
+    # Если фото не отправлено, отправляем текстовое сообщение
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    data = {
+        "chat_id": telegram_id,
+        "text": caption,
+        "parse_mode": "HTML",
+    }
+    r = requests.post(url, data=data)
+    logging.info(f"sendMessage response: {r.json()}")
 
 
 def index(request):
