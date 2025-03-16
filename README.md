@@ -34,9 +34,7 @@ FlowerDelivery – это полнофункциональное веб-прил
 - **Telegram-бот:** Python, Aiogram 3, Requests
 - **Асинхронные утилиты:** asgiref (sync_to_async)
 
-## Структура проекта
-
-
+```plaintext
 FlowerDelivery/
 │
 ├── bot/
@@ -75,7 +73,6 @@ FlowerDelivery/
 │               └── register.html    # Страница регистрации
 │
 └── requirements.txt        # Список зависимостей Python
-
 ## Установка
 Клонируйте репозиторий:
 git clone https://github.com/yourusername/FlowerDelivery.git
