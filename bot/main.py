@@ -4,6 +4,12 @@ import django
 import logging
 import asyncio
 from asgiref.sync import sync_to_async
+import requests
+from aiogram import Bot, Dispatcher, types
+from aiogram.filters import Command, CommandStart
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
+from django.conf import settings
+
 
 # Определяем путь к корневой папке проекта (FlowerDelivery)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -14,11 +20,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "website.settings")
 # Инициализируем Django
 django.setup()
 
-import requests
-from aiogram import Bot, Dispatcher, types
-from aiogram.filters import Command, CommandStart
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
-from django.conf import settings
 
 # Импортируем конфигурацию бота из bot/config.py
 try:

@@ -1,11 +1,3 @@
-try:
-    from bot.config import BOT_TOKEN, BOT_USERNAME  # Конфигурация бота
-except ModuleNotFoundError:
-    BOT_TOKEN = None
-    BOT_USERNAME = None
-
-import requests  # Обязательно установленный пакет requests
-import logging
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
@@ -20,11 +12,7 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.conf import settings
 from django.views.decorators.csrf import csrf_protect
-
 import os
-
-
-
 
 # Если структура не изменилась, импорт из shop.models (можно оставить)
 from shop.models import Order
@@ -32,6 +20,16 @@ from shop.models import Order
 # --- Функции для работы с Telegram ID через синхронные вызовы ---
 from django.db import connection
 from asgiref.sync import sync_to_async
+
+try:
+    from bot.config import BOT_TOKEN, BOT_USERNAME  # Конфигурация бота
+except ModuleNotFoundError:
+    BOT_TOKEN = None
+    BOT_USERNAME = None
+
+import requests  # Обязательно установленный пакет requests
+import logging
+
 
 def safe_int(s):
     try:
