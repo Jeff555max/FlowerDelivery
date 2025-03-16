@@ -13,7 +13,9 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.conf import settings
 from django.views.decorators.csrf import csrf_protect
 import os
-from .models import OrderItem  # Импортируем новую модель OrderItem
+from .models import OrderItem
+import requests
+import logging
 
 # Если структура не изменилась, импорт из shop.models (можно оставить)
 from shop.models import Order
@@ -28,8 +30,6 @@ except ModuleNotFoundError:
     BOT_TOKEN = None
     BOT_USERNAME = None
 
-import requests  # Обязательно установленный пакет requests
-import logging
 
 
 def safe_int(s):
