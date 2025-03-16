@@ -102,8 +102,6 @@ python bot/main.py
 
 Привязка аккаунта:
 В профиле пользователя на сайте генерируется уникальная ссылка для привязки Telegram-бота:
-
-
 telegram_bot_url = f"https://t.me/{settings.TELEGRAM_BOT_USERNAME}?start={request.user.id}"
 Пользователь переходит по этой ссылке, чтобы связать свою учетную запись с Telegram.
 
