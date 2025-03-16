@@ -92,7 +92,7 @@ python website/manage.py createsuperuser
 Запуск Django-сервера:
 python website/manage.py runserver
 
-Запуск Telegram-бота:
+## Запуск Telegram-бота:
 Откройте новый терминал, активируйте виртуальное окружение и запустите:
 python bot/main.py
 
