@@ -44,6 +44,8 @@ FlowerDelivery/
 │   └── db.sqlite3
 │
 ├── website/
+│   │   └── media/ 
+│   │         ├──products/  # Папка для хранения изображений товаров
 │   ├── manage.py           # Файл управления Django
 │   ├── website/            # Основная папка проекта Django
 │   │   ├── __init__.py
