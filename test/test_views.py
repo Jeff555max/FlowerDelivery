@@ -1,3 +1,10 @@
+# Этот файл использует стандартный модуль тестирования Django (на базе unittest) для проверки  функций из shop/views.py
+# для основных представлений (index, catalog, add_to_cart, remove_from_cart) и
+# функций (safe_int, send_order_notification).
+# Этот тестовый набор покрывает функции из views (проверку главной страницы, каталога,
+# функций safe_int, отправку уведомлений, добавление/удаление из корзины). Вы можете расширять
+# его по мере необходимости.
+
 import os
 # Настраиваем переменную окружения для Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'website.settings')
