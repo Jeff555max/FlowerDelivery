@@ -31,7 +31,6 @@ except ModuleNotFoundError:
     BOT_USERNAME = None
 
 
-
 def safe_int(s):
     try:
         return int(s)
