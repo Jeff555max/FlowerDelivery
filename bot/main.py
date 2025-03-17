@@ -65,21 +65,19 @@ async def start_handler(message: Message, command: CommandStart):
         if user_id:
             try:
                 await update_user_telegram_id(user_id, message.from_user.id)
-                await message.reply("Ваш аккаунт успешно привязан к Telegram!")
+                kb = ReplyKeyboardMarkup(
+                    keyboard=[[KeyboardButton(text="Старт"), KeyboardButton(text="Статус заказа")]],
+                    resize_keyboard=True,
+                    one_time_keyboard=False
+                )
+                await message.reply(
+                    "Привет! Ваш аккаунт успешно привязан к Telegram! Я бот магазина цветов.\nИспользуйте /help для получения списка команд.",
+                    reply_markup=kb
+                )
             except CustomUser.DoesNotExist:
                 await message.reply("Пользователь с таким ID не найден.")
         else:
             await message.reply("Некорректный формат ID. Используйте ссылку из личного кабинета.")
-    else:
-        kb = ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(text="Старт"), KeyboardButton(text="Статус заказа")]],
-            resize_keyboard=True,
-            one_time_keyboard=False
-        )
-        await message.reply(
-            "Привет! Я бот магазина цветов.\nИспользуйте /help для получения списка команд.",
-            reply_markup=kb
-        )
 
 @dp.message(Command("help"))
 async def help_handler(message: Message):
