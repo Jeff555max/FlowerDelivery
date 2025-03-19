@@ -80,7 +80,6 @@ class Cart(models.Model):
         return f"{self.quantity} x {self.product.name}"
 
 
-# В файле shop/models.py
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items', verbose_name="Заказ")
     product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Товар")

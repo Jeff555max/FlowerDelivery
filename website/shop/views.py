@@ -17,12 +17,17 @@ from .models import OrderItem
 import requests
 import logging
 
-# Если структура не изменилась, импорт из shop.models (можно оставить)
+# Если структура не изменилась, импорт из shop.models
 from shop.models import Order
 
 # --- Функции для работы с Telegram ID через синхронные вызовы ---
 from django.db import connection
 from asgiref.sync import sync_to_async
+
+# Функции, которые работают с базой данных (например, получение и обновление Telegram ID), изначально являются синхронными
+# (Django ORM работает синхронно). Для того чтобы их использовать в асинхронном контексте (например, в обработчиках aiogram),
+# мы оборачиваем эти синхронные вызовы в sync_to_async. То есть сам импорт sync_to_async позволяет запускать синхронный
+# код асинхронно.
 
 try:
     from bot.config import BOT_TOKEN, BOT_USERNAME  # Конфигурация бота
@@ -67,10 +72,7 @@ async def update_user_telegram_id(user_id, tg_id):
 # При таком подходе Telegram получает файл напрямую от вашего кода, поэтому не нужно иметь публичный адрес. Отправка фото работает и на локальном окружении.
 # С этим подходом фотографии товаров будут отправляться в боте даже при локальной разработке. Если вы захотите использовать URL (чтобы Telegram скачивал файл), придётся предоставить Telegram публичный доступ к вашему серверу (через домен или ngrok), иначе Telegram не сможет обратиться к http://127.0.0.1:8000.
 
-import os
-import requests
-import logging
-from django.conf import settings
+
 
 def send_order_notification(order, cart_items_list, event="order_placed"):
     """
