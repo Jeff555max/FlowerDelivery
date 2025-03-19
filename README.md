@@ -74,6 +74,7 @@ FlowerDelivery/
 │               └── register.html    # Страница регистрации
 │
 └── requirements.txt        # Список зависимостей Python
+
 ## Установка
 Клонируйте репозиторий:
 git clone https://github.com/Jeff555max/FlowerDelivery.git
