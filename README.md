@@ -117,6 +117,6 @@ telegram_bot_url = f"https://t.me/{settings.TELEGRAM_BOT_USERNAME}?start={reques
 
 При изменении статуса заказа администратором бот отправляет уведомление.
 
-Лицензия
+## Лицензия
 
 Этот проект лицензирован по MIT License.
