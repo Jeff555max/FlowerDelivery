@@ -166,3 +166,4 @@ except ImportError as e:
 # SITE_URL = "http://127.0.0.1:8000" # ??? можно наверно это убрать
 
 
+ALLOWED_HOSTS = ['5.183.188.107']
