@@ -132,7 +132,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 # Если нужно, можно добавить:
-# STATICFILES_DIRS = [BASE_DIR / 'shop' / 'static']
+STATICFILES_DIRS = [BASE_DIR / 'shop' / 'static']
 
 
 # Default primary key field type
@@ -166,4 +166,4 @@ except ImportError as e:
 # SITE_URL = "http://127.0.0.1:8000" # ??? можно наверно это убрать
 
 
-ALLOWED_HOSTS = ['5.183.188.107']
+# ALLOWED_HOSTS = ['5.183.188.107']
