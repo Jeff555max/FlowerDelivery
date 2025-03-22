@@ -1,39 +1,36 @@
-
+import os
+import logging
+import requests
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
-from .models import Product, Cart, Order, CustomUser
-from django.contrib.auth import login, logout
+from django.conf import settings
+from django.views.decorators.csrf import csrf_protect
 from django.contrib import messages
-from .forms import CheckoutForm, CustomUserCreationForm
+from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.conf import settings
-from django.views.decorators.csrf import csrf_protect
-import os
-from .models import OrderItem
-import requests
-import logging
 
-# Если структура не изменилась, импорт из shop.models
+# Импорт форм и моделей
+from .forms import CheckoutForm, CustomUserCreationForm
+from .models import Product, Cart, Order, CustomUser, OrderItem
+
+# Если структура не изменилась, импорт из shop.models (можно оставить)
 from shop.models import Order
 
 # --- Функции для работы с Telegram ID через синхронные вызовы ---
-from django.db import connection
 from asgiref.sync import sync_to_async
-
-# Функции, которые работают с базой данных (например, получение и обновление Telegram ID), изначально являются синхронными
-# (Django ORM работает синхронно). Для того чтобы их использовать в асинхронном контексте (например, в обработчиках aiogram),
-# мы оборачиваем эти синхронные вызовы в sync_to_async. То есть сам импорт sync_to_async позволяет запускать синхронный
-# код асинхронно.
+from django.db import connection
 
 try:
     from bot.config import BOT_TOKEN, BOT_USERNAME  # Конфигурация бота
 except ModuleNotFoundError:
     BOT_TOKEN = None
     BOT_USERNAME = None
+
+logger = logging.getLogger(__name__)
 
 
 def safe_int(s):
@@ -42,36 +39,13 @@ def safe_int(s):
     except (ValueError, TypeError):
         return None
 
+
 async def update_user_telegram_id(user_id, tg_id):
     def _update():
         user = CustomUser.objects.get(pk=user_id)
         user.telegram_id = str(tg_id)
         user.save()
     await sync_to_async(_update)()
-
-# Если вы тестируете отправку фотографий на локальном сервере (http://127.0.0.1:8000) без публичного домена, Telegram-сервер не сможет напрямую обратиться к вашему localhost, чтобы скачать изображение по URL. Поэтому ссылка вида http://127.0.0.1:8000/media/... будет для Telegram недоступна.
-#
-# Есть два пути решения:
-#
-# Использовать публично доступный адрес (через домен или туннель, например ngrok), чтобы Telegram мог увидеть ваши изображения по URL.
-# Отправлять фото как локальный файл, минуя URL. Тогда Telegram не будет скачивать изображение по ссылке, а получит его напрямую из вашего кода.
-# Ниже приведён пример кода, где мы, если нужно, отправляем фото файлом через files параметр, а не по URL. Таким образом Telegram получит файл напрямую из вашего локального MEDIA_ROOT. Это работает даже на localhost, так как отправка идёт непосредственно из вашего кода.
-
-# Как это работает
-# Проверяем в cart_items_list, есть ли у товара поле image и заполняем local_image_path = item.product.image.path.
-# Если файл существует, открываем его как бинарный и отправляем через параметр files={"photo": ...}. Тогда Telegram не пытается скачивать картинку с URL, а получает её напрямую.
-# Если фото нет, или оно не найдено на диске, отправляем обычный текст.
-# Важные нюансы
-# Поле image в модели:
-# Убедитесь, что в модели Product вы используете, например, models.ImageField(...), и что при загрузке в админке (или другом месте) файл действительно сохраняется в MEDIA_ROOT.
-# item.product.image.path:
-# Django‑поле ImageField даёт вам image.url (для HTML‑ссылок) и image.path (абсолютный путь на диске). Нам нужен именно image.path, чтобы открыть файл.
-# Проверка существования файла:
-# Если файла на диске нет (например, запись в базе есть, а самого файла нет), os.path.exists(local_image_path) вернёт False, и мы отправим обычное сообщение без фото.
-# Работа на localhost:
-# При таком подходе Telegram получает файл напрямую от вашего кода, поэтому не нужно иметь публичный адрес. Отправка фото работает и на локальном окружении.
-# С этим подходом фотографии товаров будут отправляться в боте даже при локальной разработке. Если вы захотите использовать URL (чтобы Telegram скачивал файл), придётся предоставить Telegram публичный доступ к вашему серверу (через домен или ngrok), иначе Telegram не сможет обратиться к http://127.0.0.1:8000.
-
 
 
 def send_order_notification(order, cart_items_list, event="order_placed"):
@@ -81,11 +55,10 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
     При event="order_placed" пытаемся отправить первое найденное изображение как файл.
     При event="status_changed" отправляем сообщение без фото.
     """
-    # Используем BOT_TOKEN, если он установлен, иначе пытаемся взять из настроек
     bot_token = BOT_TOKEN or getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
     telegram_id = getattr(order.user, 'telegram_id', None)
     if not telegram_id or not bot_token:
-        logging.warning("Telegram ID или BOT_TOKEN отсутствуют.")
+        logger.warning("Telegram ID или BOT_TOKEN отсутствуют.")
         return
 
     if event == "order_placed":
@@ -98,10 +71,9 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
         for item in cart_items_list:
             if item.product.image:
                 try:
-                    # Получаем абсолютный путь к файлу на диске
                     local_image_path = item.product.image.path
                 except Exception as e:
-                    logging.error(f"Ошибка получения пути изображения: {e}")
+                    logger.error(f"Ошибка получения пути изображения: {e}")
                 break
     elif event == "status_changed":
         caption = (
@@ -113,8 +85,7 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
     else:
         return
 
-    # Если указан локальный путь, пытаемся отправить файл
-    if local_image_path:
+    if local_image_path and os.path.exists(local_image_path):
         try:
             with open(local_image_path, 'rb') as f:
                 url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
@@ -125,12 +96,11 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
                 }
                 files = {"photo": f}
                 r = requests.post(url, data=data, files=files)
-            logging.info(f"sendPhoto (file) response: {r.json()}")
+            logger.info(f"sendPhoto (file) response: {r.json()}")
             return
         except Exception as e:
-            logging.error(f"Ошибка при отправке фото: {e}")
+            logger.error(f"Ошибка при отправке фото: {e}")
 
-    # Если фото не отправлено, отправляем текстовое сообщение
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     data = {
         "chat_id": telegram_id,
@@ -138,11 +108,12 @@ def send_order_notification(order, cart_items_list, event="order_placed"):
         "parse_mode": "HTML",
     }
     r = requests.post(url, data=data)
-    logging.info(f"sendMessage response: {r.json()}")
+    logger.info(f"sendMessage response: {r.json()}")
 
 
 def index(request):
     return render(request, "index.html")
+
 
 def catalog(request):
     products_list = Product.objects.all()
@@ -155,6 +126,7 @@ def catalog(request):
     except EmptyPage:
         products = paginator.page(paginator.num_pages)
     return render(request, "catalog.html", {"products": products})
+
 
 def add_to_cart(request, product_id, quantity):
     if not request.session.session_key:
@@ -181,6 +153,7 @@ def add_to_cart(request, product_id, quantity):
         "cart_count": cart_count
     })
 
+
 def remove_from_cart(request, product_id):
     session_key = request.session.session_key
     if not session_key:
@@ -188,6 +161,7 @@ def remove_from_cart(request, product_id):
     cart_item = get_object_or_404(Cart, session_key=session_key, product_id=product_id)
     cart_item.delete()
     return redirect("cart")
+
 
 def cart(request):
     session_key = request.session.session_key
@@ -201,6 +175,7 @@ def cart(request):
         'total_price': total_price,
         'cart_count': cart_count,
     })
+
 
 @login_required(login_url='register')
 def update_cart_bulk(request):
@@ -228,9 +203,13 @@ def update_cart_bulk(request):
     return redirect("checkout")
 
 
-
 @login_required(login_url='register')
 def checkout(request):
+    """
+    Оформление заказа.
+    Независимо от того, что введено в поле 'name' формы, заказ связывается с request.user.
+    После оформления заказа вызывается send_order_notification с event="order_placed".
+    """
     session_key = request.session.session_key
     cart_items = Cart.objects.filter(session_key=session_key)
     if not cart_items:
@@ -244,7 +223,8 @@ def checkout(request):
             order.user = request.user
             order.name = request.user.username
             order.save()
-            # Создаем записи позиций заказа
+            # Сохраняем список позиций заказа до удаления корзины
+            items_list = list(cart_items)
             for cart_item in cart_items:
                 OrderItem.objects.create(
                     order=order,
@@ -254,12 +234,11 @@ def checkout(request):
                 )
             cart_items.delete()
             messages.success(request, "Заказ успешно оформлен!")
-            send_order_notification(order, list(cart_items), event="order_placed")
+            send_order_notification(order, items_list, event="order_placed")
             return redirect("profile")
     else:
         form = CheckoutForm()
     return render(request, "checkout.html", {"form": form, "cart_items": cart_items})
-
 
 
 def register(request):
@@ -283,6 +262,7 @@ def register(request):
         form = CustomUserCreationForm()
     return render(request, "register.html", {"form": form})
 
+
 def user_login(request):
     """
     Авторизация пользователя.
@@ -304,6 +284,7 @@ def user_login(request):
         form = AuthenticationForm()
     return render(request, "login.html", {"form": form})
 
+
 def user_logout(request):
     """Выход пользователя"""
     if not request.user.is_authenticated:
@@ -312,13 +293,15 @@ def user_logout(request):
     messages.success(request, "Вы успешно вышли из системы!")
     return redirect("login")
 
+
 @login_required
 def profile(request):
     orders = Order.objects.filter(user=request.user)
     telegram_bot_url = f"https://t.me/{settings.TELEGRAM_BOT_USERNAME}?start={request.user.id}"
     return render(request, "profile.html", {"orders": orders, "telegram_bot_url": telegram_bot_url})
 
-# --- Новые представления для аккаунта администратора ---
+
+# --- Представления для аккаунта администратора ---
 
 @login_required
 def adminpage(request):
@@ -331,6 +314,7 @@ def adminpage(request):
         return redirect("profile")
     orders = Order.objects.all().order_by("-created_at")
     return render(request, "adminpage.html", {"orders": orders})
+
 
 @login_required
 @csrf_protect
