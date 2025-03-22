@@ -1,2 +1,2 @@
-BOT_TOKEN = 'Введите Ваш токен'
-BOT_USERNAME = 'Введите имя Вашего бота'
+BOT_TOKEN = '7679707981:AAEtaDjvJT4EGBVsrBVK49aUn2M6yaL3VYU'
+BOT_USERNAME = 'Flower5Shop_Bot'
