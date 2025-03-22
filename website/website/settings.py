@@ -53,6 +53,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'website.urls'
@@ -166,4 +169,10 @@ except ImportError as e:
 # SITE_URL = "http://127.0.0.1:8000" # ??? можно наверно это убрать
 
 
-# ALLOWED_HOSTS = ['5.183.188.107']
+ALLOWED_HOSTS = [
+    '127.0.0.1',
+    'localhost',
+    '5.183.188.107',     # IP вашего сервера
+    'ваш-домен.ru',      # если есть домен
+]
+
