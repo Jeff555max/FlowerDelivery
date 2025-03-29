@@ -8,7 +8,25 @@ from asgiref.sync import sync_to_async
 # Определяем путь к корневой папке проекта (FlowerDelivery)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 # Добавляем в sys.path папку website, где лежат manage.py и settings.py
-sys.path.insert(0, os.path.join(BASE_DIR, "website"))
+# sys.path.insert(0, os.path.join(BASE_DIR, "website"))
+
+# ```python if os.path.join(BASE_DIR, "website") not in sys.path: ```
+# 1. **`os.path.join(BASE_DIR, "website")`**:
+# Эта функция объединяет значение переменной `BASE_DIR` (которая, как правило, представляет собой базовый каталог
+# вашего проекта) с подкаталогом `"website"`, создавая полный путь к этому каталогу.
+# 2. **`not in sys.path`**:
+# Здесь проверяется, отсутствует ли созданный путь в списке `sys.path`. `sys.path` — это список строк, который
+# определяет, где Python ищет модули для импорта. Если путь к каталогу `"website"` не находится в этом списке,
+# значит, модули из этого каталога не будут доступны для импорта.
+# ```python sys.path.insert(0, os.path.join(BASE_DIR, "website")) ```
+# 3. **`sys.path.insert(0, ...)`**:
+# Если путь к каталогу `"website"` не был найден в `sys.path`, то он будет добавлен в начало списка. Это означает,
+# что Python будет искать модули в этом каталоге прежде всего.
+# Этот код обеспечивает возможность импортировать модули из каталога `"website"` в нашем проекте, добавляя
+# его в путь поиска модулей, если он еще не был добавлен.
+
+if os.path.join(BASE_DIR, "website") not in sys.path:
+    sys.path.insert(0, os.path.join(BASE_DIR, "website"))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "website.settings")
 
 # Инициализируем Django
