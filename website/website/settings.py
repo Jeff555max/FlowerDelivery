@@ -158,15 +158,12 @@ try:
     sys.path.insert(0, os.path.join(BASE_DIR, '..', 'bot'))
     from config import BOT_TOKEN, BOT_USERNAME
     TELEGRAM_BOT_TOKEN = BOT_TOKEN
-    TELEGRAM_BOT_USERNAME = BOT_USERNAME  # Например, "Flower5Shop_Bot" (без @)
+    TELEGRAM_BOT_USERNAME = BOT_USERNAME  
 except ImportError as e:
     print(f"ImportError: {e}")
     TELEGRAM_BOT_TOKEN = None
     TELEGRAM_BOT_USERNAME = None
 
-
-
-# SITE_URL = "http://127.0.0.1:8000" # ??? можно наверно это убрать
 
 
 ALLOWED_HOSTS = [
