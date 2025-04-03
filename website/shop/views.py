@@ -17,7 +17,6 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .forms import CheckoutForm, CustomUserCreationForm
 from .models import Product, Cart, Order, CustomUser, OrderItem
 
-# Если структура не изменилась, импорт из shop.models (можно оставить)
 from shop.models import Order
 
 # --- Функции для работы с Telegram ID через синхронные вызовы ---
