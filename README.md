@@ -30,7 +30,7 @@ FlowerDelivery – это полнофункциональное веб-прил
 - **Backend:** Django 5.1.6, Django REST Framework
 - **База данных:** SQLite3 (база данных расположена в отдельной папке `db`)
 - **Frontend:** HTML, CSS, Bootstrap 5 (через CDN)
-- **Telegram-бот:** Python, Aiogram 3, Requests
+- **Telegram-бот:** Python, Aiogram 3
 - **Асинхронные утилиты:** asgiref (sync_to_async)
 
 ```plaintext
